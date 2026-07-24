@@ -218,7 +218,7 @@ function HomePage() {
         <section className="grid gap-10 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
           <div className="space-y-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-              <Sparkles className="size-4" />
+              <Lock className="size-4" />
               <span>Private. No chat history saved.</span>
             </div>
             <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
