@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attorney_submissions: {
+        Row: {
+          created_at: string
+          description: string
+          full_name: string
+          id: string
+          location: string
+          photo_url: string
+          specialty: string
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          full_name: string
+          id?: string
+          location: string
+          photo_url: string
+          specialty: string
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          full_name?: string
+          id?: string
+          location?: string
+          photo_url?: string
+          specialty?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
