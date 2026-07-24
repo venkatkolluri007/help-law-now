@@ -182,9 +182,24 @@ const WELCOME_MESSAGE: UIMessage = {
   ],
 };
 
+type Expert = {
+  id: string;
+  name: string;
+  title: string;
+  specialty: string;
+  location: string;
+  description: string;
+  icon: React.ElementType;
+  photoUrl: string;
+  status: "verified" | "pending";
+};
+
+const STATIC_EXPERTS: Expert[] = EXPERTS.map((e) => ({ ...e, status: "verified" as const }));
+
 function HomePage() {
   const [activeSpecialty, setActiveSpecialty] = useState("All");
   const [search, setSearch] = useState("");
+  const [submissions, setSubmissions] = useState<Expert[]>([]);
   const chatTransport = useMemo(
     () => new DefaultChatTransport({ api: "/api/chat" }),
     []
@@ -213,6 +228,34 @@ function HomePage() {
     previousStatusRef.current = status;
   }, [status]);
 
+  const loadSubmissions = async () => {
+    const { data, error } = await supabase
+      .from("attorney_submissions")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Failed to load submissions", error);
+      return;
+    }
+    setSubmissions(
+      (data ?? []).map((row) => ({
+        id: `sub-${row.id}`,
+        name: row.full_name,
+        title: row.title,
+        specialty: row.specialty,
+        location: row.location,
+        description: row.description,
+        icon: User,
+        photoUrl: row.photo_url,
+        status: row.status === "verified" ? "verified" : "pending",
+      }))
+    );
+  };
+
+  useEffect(() => {
+    loadSubmissions();
+  }, []);
+
   const handlePromptSubmit = async ({
     text,
   }: {
@@ -223,8 +266,10 @@ function HomePage() {
     await sendMessage({ text: text.trim() });
   };
 
+  const allExperts = useMemo(() => [...STATIC_EXPERTS, ...submissions], [submissions]);
+
   const filteredExperts = useMemo(() => {
-    return EXPERTS.filter((expert) => {
+    return allExperts.filter((expert) => {
       const matchesSpecialty =
         activeSpecialty === "All" || expert.specialty === activeSpecialty;
       const matchesSearch =
@@ -235,7 +280,7 @@ function HomePage() {
         expert.description.toLowerCase().includes(search.toLowerCase());
       return matchesSpecialty && matchesSearch;
     });
-  }, [activeSpecialty, search]);
+  }, [allExperts, activeSpecialty, search]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
