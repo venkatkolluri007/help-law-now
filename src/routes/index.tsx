@@ -37,12 +37,12 @@ import {
   User,
 } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import logo from "@/assets/legal-guide-logo.png";
 
 export const Route = createFileRoute("/")({
-  component: Home,
+  component: HomePage,
   head: () => ({
     meta: [
       { title: "JustLegal — Guided legal help, just in time" },
@@ -159,7 +159,19 @@ const QUICK_PROMPTS = [
   "I was injured and don't know what to do next",
 ];
 
-function Home() {
+const WELCOME_MESSAGE: UIMessage = {
+  id: "welcome",
+  role: "assistant",
+  content: "Hi — I'm here to help you make sense of your legal situation. I won't give legal advice, but I can ask a few questions and point you toward the right expert. What brings you here today?",
+  parts: [
+    {
+      type: "text",
+      text: "Hi — I'm here to help you make sense of your legal situation. I won't give legal advice, but I can ask a few questions and point you toward the right expert. What brings you here today?",
+    },
+  ],
+};
+
+function HomePage() {
   const [activeSpecialty, setActiveSpecialty] = useState("All");
   const [search, setSearch] = useState("");
   const chatTransport = useMemo(
@@ -170,19 +182,7 @@ function Home() {
   const { messages, sendMessage, status, stop } = useChat({
     id: "justlegal-chat",
     transport: chatTransport,
-    initialMessages: [
-      {
-        id: "welcome",
-        role: "assistant",
-        content: "Hi — I'm here to help you make sense of your legal situation. I won't give legal advice, but I can ask a few questions and point you toward the right expert. What brings you here today?",
-        parts: [
-          {
-            type: "text",
-            text: "Hi — I'm here to help you make sense of your legal situation. I won't give legal advice, but I can ask a few questions and point you toward the right expert. What brings you here today?",
-          },
-        ],
-      },
-    ],
+    messages: [WELCOME_MESSAGE],
   });
 
   const isLoading = status === "submitted" || status === "streaming";
@@ -283,16 +283,20 @@ function Home() {
                       description="Tell us what's going on so we can point you in the right direction."
                     />
                   ) : (
-                    messages.map((message) => (
-                      <ChatMessage
-                        key={message.id}
-                        message={message}
-                        isStreaming={
-                          status === "streaming" &&
-                          message.id === messages[messages.length - 1]?.id
-                        }
-                      />
-                    ))
+                    messages
+                      .filter((m): m is UIMessage & { role: "assistant" | "user" } =>
+                        m.role === "assistant" || m.role === "user"
+                      )
+                      .map((message) => (
+                        <ChatMessage
+                          key={message.id}
+                          message={message}
+                          isStreaming={
+                            status === "streaming" &&
+                            message.id === messages[messages.length - 1]?.id
+                          }
+                        />
+                      ))
                   )}
                   {status === "submitted" && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -412,12 +416,7 @@ function ChatMessage({
   message,
   isStreaming,
 }: {
-  message: {
-    id: string;
-    role: "user" | "assistant" | "system" | "data";
-    parts: Array<{ type: string; text?: string }>;
-    content?: string;
-  };
+  message: UIMessage & { role: "assistant" | "user" };
   isStreaming: boolean;
 }) {
   const text = message.parts
@@ -530,4 +529,4 @@ function Footer() {
   );
 }
 
-export default Home;
+export default HomePage;
