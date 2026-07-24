@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
-  BadgeCheck,
   Building2,
   Clock,
   Copyright,
@@ -422,6 +421,9 @@ function HomePage() {
         <section id="experts" className="pb-24">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
+              <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                Quick Pick
+              </div>
               <h2 className="text-3xl font-semibold tracking-tight text-foreground">
                 Vetted legal experts
               </h2>
@@ -562,15 +564,10 @@ function ExpertCard({
             <Icon className="size-6 text-primary" />
           )}
         </div>
-        {isPending ? (
+        {isPending && (
           <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
             <Clock className="size-3.5" />
             Pending review
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
-            <BadgeCheck className="size-3.5" />
-            Verified
           </div>
         )}
       </div>
