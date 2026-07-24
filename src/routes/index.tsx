@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import {
   BadgeCheck,
   Building2,
+  Clock,
   Copyright,
   FileText,
   Gavel,
@@ -40,6 +41,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import logo from "@/assets/legal-guide-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { ListPracticeDialog } from "@/components/list-practice-dialog";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -179,9 +182,24 @@ const WELCOME_MESSAGE: UIMessage = {
   ],
 };
 
+type Expert = {
+  id: string;
+  name: string;
+  title: string;
+  specialty: string;
+  location: string;
+  description: string;
+  icon: React.ElementType;
+  photoUrl: string;
+  status: "verified" | "pending";
+};
+
+const STATIC_EXPERTS: Expert[] = EXPERTS.map((e) => ({ ...e, status: "verified" as const }));
+
 function HomePage() {
   const [activeSpecialty, setActiveSpecialty] = useState("All");
   const [search, setSearch] = useState("");
+  const [submissions, setSubmissions] = useState<Expert[]>([]);
   const chatTransport = useMemo(
     () => new DefaultChatTransport({ api: "/api/chat" }),
     []
@@ -210,6 +228,34 @@ function HomePage() {
     previousStatusRef.current = status;
   }, [status]);
 
+  const loadSubmissions = async () => {
+    const { data, error } = await supabase
+      .from("attorney_submissions")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error("Failed to load submissions", error);
+      return;
+    }
+    setSubmissions(
+      (data ?? []).map((row) => ({
+        id: `sub-${row.id}`,
+        name: row.full_name,
+        title: row.title,
+        specialty: row.specialty,
+        location: row.location,
+        description: row.description,
+        icon: User,
+        photoUrl: row.photo_url,
+        status: row.status === "verified" ? "verified" : "pending",
+      }))
+    );
+  };
+
+  useEffect(() => {
+    loadSubmissions();
+  }, []);
+
   const handlePromptSubmit = async ({
     text,
   }: {
@@ -220,8 +266,10 @@ function HomePage() {
     await sendMessage({ text: text.trim() });
   };
 
+  const allExperts = useMemo(() => [...STATIC_EXPERTS, ...submissions], [submissions]);
+
   const filteredExperts = useMemo(() => {
-    return EXPERTS.filter((expert) => {
+    return allExperts.filter((expert) => {
       const matchesSpecialty =
         activeSpecialty === "All" || expert.specialty === activeSpecialty;
       const matchesSearch =
@@ -232,7 +280,7 @@ function HomePage() {
         expert.description.toLowerCase().includes(search.toLowerCase());
       return matchesSpecialty && matchesSearch;
     });
-  }, [activeSpecialty, search]);
+  }, [allExperts, activeSpecialty, search]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -381,13 +429,22 @@ function HomePage() {
                 Browse specialists who can help with the issues you describe.
               </p>
             </div>
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by name or specialty"
-                className="pl-9"
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name or specialty"
+                  className="pl-9"
+                />
+              </div>
+              <ListPracticeDialog
+                specialties={SPECIALTIES}
+                onSubmitted={loadSubmissions}
+                trigger={
+                  <Button className="rounded-full">List your practice</Button>
+                }
               />
             </div>
           </div>
@@ -478,12 +535,19 @@ function ExpertCard({
     description: string;
     icon: React.ElementType;
     photoUrl: string;
+    status: "verified" | "pending";
   };
 }) {
   const [imageError, setImageError] = useState(false);
   const Icon = expert.icon;
+  const isPending = expert.status === "pending";
   return (
-    <div className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md">
+    <div
+      className={cn(
+        "group flex flex-col rounded-xl border bg-card p-5 transition-shadow hover:shadow-md",
+        isPending ? "border-dashed border-muted-foreground/30" : "border-border"
+      )}
+    >
       <div className="mb-4 flex items-start justify-between">
         <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary/10">
           {!imageError ? (
@@ -498,10 +562,17 @@ function ExpertCard({
             <Icon className="size-6 text-primary" />
           )}
         </div>
-        <div className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
-          <BadgeCheck className="size-3.5" />
-          Verified
-        </div>
+        {isPending ? (
+          <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
+            <Clock className="size-3.5" />
+            Pending review
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
+            <BadgeCheck className="size-3.5" />
+            Verified
+          </div>
+        )}
       </div>
       <h3 className="font-semibold text-foreground">{expert.name}</h3>
       <p className="text-sm text-primary">{expert.title}</p>
