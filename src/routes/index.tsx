@@ -186,6 +186,21 @@ function HomePage() {
 
   const isLoading = status === "submitted" || status === "streaming";
 
+  const composerRef = useRef<HTMLDivElement>(null);
+  const previousStatusRef = useRef(status);
+
+  useEffect(() => {
+    composerRef.current?.querySelector("textarea")?.focus();
+  }, []);
+
+  useEffect(() => {
+    const prev = previousStatusRef.current;
+    if (status === "ready" && (prev === "streaming" || prev === "submitted")) {
+      composerRef.current?.querySelector("textarea")?.focus();
+    }
+    previousStatusRef.current = status;
+  }, [status]);
+
   const handlePromptSubmit = async ({
     text,
   }: {
