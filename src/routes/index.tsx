@@ -422,6 +422,9 @@ function HomePage() {
         <section id="experts" className="pb-24">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
+              <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                Quick Pick
+              </div>
               <h2 className="text-3xl font-semibold tracking-tight text-foreground">
                 Vetted legal experts
               </h2>
