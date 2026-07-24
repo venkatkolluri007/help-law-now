@@ -565,15 +565,10 @@ function ExpertCard({
             <Icon className="size-6 text-primary" />
           )}
         </div>
-        {isPending ? (
+        {isPending && (
           <div className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
             <Clock className="size-3.5" />
             Pending review
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
-            <BadgeCheck className="size-3.5" />
-            Verified
           </div>
         )}
       </div>
