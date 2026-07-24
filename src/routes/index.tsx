@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import {
   BadgeCheck,
   Building2,
+  Clock,
   Copyright,
   FileText,
   Gavel,
@@ -40,6 +41,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import logo from "@/assets/legal-guide-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { ListPracticeDialog } from "@/components/list-practice-dialog";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
