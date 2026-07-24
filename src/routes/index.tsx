@@ -137,7 +137,7 @@ const EXPERTS = [
     location: "Houston, TX",
     description: "Wills, trusts, probate, and powers of attorney.",
     icon: FileText,
-    photoUrl: "https://i.pravatar.cc/300?img=10",
+    photoUrl: "https://i.pravatar.cc/300?img=12",
   },
   {
     id: "8",
