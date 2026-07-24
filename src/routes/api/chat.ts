@@ -20,26 +20,43 @@ export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { messages } = (await request.json()) as ChatRequestBody;
-        if (!Array.isArray(messages)) {
-          return new Response("Messages are required", { status: 400 });
+        try {
+          const { messages } = (await request.json()) as ChatRequestBody;
+          if (!Array.isArray(messages)) {
+            return new Response("Messages are required", { status: 400 });
+          }
+
+          const key = process.env.OPENAI_API_KEY;
+          if (!key) {
+            return new Response(
+              "Missing OPENAI_API_KEY. Add it in Project Settings → Secrets.",
+              { status: 500 },
+            );
+          }
+
+          const openai = createOpenAI({ apiKey: key });
+          const result = streamText({
+            model: openai("gpt-4o"),
+            system: SYSTEM_PROMPT,
+            messages: await convertToModelMessages(messages as UIMessage[]),
+            onError: ({ error }) => {
+              console.error("[api/chat] streamText error:", error);
+            },
+          });
+
+          return result.toUIMessageStreamResponse({
+            originalMessages: messages as UIMessage[],
+            onError: (error) => {
+              console.error("[api/chat] stream response error:", error);
+              const message = error instanceof Error ? error.message : String(error);
+              return `Chat error: ${message}`;
+            },
+          });
+        } catch (error) {
+          console.error("[api/chat] handler error:", error);
+          const message = error instanceof Error ? error.message : String(error);
+          return new Response(`Chat error: ${message}`, { status: 500 });
         }
-
-        const key = process.env.OPENAI_API_KEY;
-        if (!key) {
-          return new Response("Missing OPENAI_API_KEY", { status: 500 });
-        }
-
-        const openai = createOpenAI({ apiKey: key });
-        const result = streamText({
-          model: openai("gpt-4o"),
-          system: SYSTEM_PROMPT,
-          messages: await convertToModelMessages(messages as UIMessage[]),
-        });
-
-        return result.toUIMessageStreamResponse({
-          originalMessages: messages as UIMessage[],
-        });
       },
     },
   },
