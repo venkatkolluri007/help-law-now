@@ -147,7 +147,7 @@ const EXPERTS = [
     location: "Austin, TX",
     description: "Business formation, contract drafting, and partnership disputes.",
     icon: Building2,
-    photoUrl: "https://i.pravatar.cc/300?img=51",
+    photoUrl: "https://randomuser.me/api/portraits/men/13.jpg",
   },
   {
     id: "9",
