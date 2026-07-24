@@ -78,14 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "JustLegal — Guided legal help, just in time" },
+      { title: "Ally AI — Guided legal help, just in time" },
       { name: "description", content: "A private, no-persistence chat that helps you understand your legal situation and points you to the right legal expert." },
-      { name: "author", content: "JustLegal" },
-      { property: "og:title", content: "JustLegal — Guided legal help, just in time" },
+      { name: "author", content: "Ally AI" },
+      { property: "og:title", content: "Ally AI — Guided legal help, just in time" },
       { property: "og:description", content: "A private, no-persistence chat that helps you understand your legal situation and points you to the right legal expert." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@JustLegal" },
+      { name: "twitter:site", content: "@AllyAI" },
     ],
     links: [
       {

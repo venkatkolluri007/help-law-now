@@ -47,9 +47,9 @@ export const Route = createFileRoute("/")({
   component: HomePage,
   head: () => ({
     meta: [
-      { title: "JustLegal — Guided legal help, just in time" },
+      { title: "Ally AI — Guided legal help, just in time" },
       { name: "description", content: "Private, no-persistence chat triage that helps you understand your legal situation and connects you with the right expert." },
-      { property: "og:title", content: "JustLegal — Guided legal help, just in time" },
+      { property: "og:title", content: "Ally AI — Guided legal help, just in time" },
       { property: "og:description", content: "Private, no-persistence chat triage that helps you understand your legal situation and connects you with the right expert." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -320,7 +320,7 @@ function HomePage() {
             <div className="absolute inset-0 rounded-3xl bg-primary/5 blur-3xl" />
             <img
               src={logo}
-              alt="JustLegal — a balanced scale inside a warm shield"
+              alt="Ally AI — a balanced scale inside a warm shield"
               className="relative h-64 w-64 object-contain"
               width={256}
               height={256}
@@ -594,7 +594,7 @@ function Header() {
             height={32}
             loading="eager"
           />
-          <span className="text-lg font-semibold text-foreground">JustLegal</span>
+          <span className="text-lg font-semibold text-foreground">Ally AI</span>
         </a>
         <nav className="hidden items-center gap-6 text-sm font-medium sm:flex">
           <a href="#chat" className="text-muted-foreground transition-colors hover:text-foreground">
@@ -623,10 +623,10 @@ function Footer() {
               height={24}
               loading="lazy"
             />
-            <span className="font-semibold text-foreground">JustLegal</span>
+            <span className="font-semibold text-foreground">Ally AI</span>
           </div>
           <p className="text-center text-xs text-muted-foreground">
-            JustLegal is not a law firm and does not provide legal advice. We connect you with independent attorneys.
+            Ally AI is not a law firm and does not provide legal advice. We connect you with independent attorneys.
           </p>
         </div>
       </div>
