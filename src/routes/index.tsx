@@ -337,24 +337,26 @@ function HomePage() {
                   </div>
                 )}
 
-                <PromptInput
-                  onSubmit={handlePromptSubmit}
-                  className="flex flex-col gap-2"
-                >
-                  <PromptInputTextarea
-                    placeholder="Describe your legal situation..."
-                    className="min-h-[5rem] resize-none rounded-xl border-border bg-muted/30 px-4 py-3 text-sm focus-visible:bg-card"
-                    disabled={isLoading}
-                  />
-                  <PromptInputFooter className="justify-end">
-                    <PromptInputSubmit
-                      status={status}
-                      onStop={stop}
+                <div ref={composerRef}>
+                  <PromptInput
+                    onSubmit={handlePromptSubmit}
+                    className="flex flex-col gap-2"
+                  >
+                    <PromptInputTextarea
+                      placeholder="Describe your legal situation..."
+                      className="min-h-[5rem] resize-none rounded-xl border-border bg-muted/30 px-4 py-3 text-sm focus-visible:bg-card"
                       disabled={isLoading}
-                      className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
                     />
-                  </PromptInputFooter>
-                </PromptInput>
+                    <PromptInputFooter className="justify-end">
+                      <PromptInputSubmit
+                        status={status}
+                        onStop={stop}
+                        disabled={isLoading}
+                        className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                      />
+                    </PromptInputFooter>
+                  </PromptInput>
+                </div>
               </div>
             </div>
           </div>
