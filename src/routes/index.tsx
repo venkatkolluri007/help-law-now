@@ -77,7 +77,7 @@ const EXPERTS = [
     location: "San Francisco, CA",
     description: "Compassionate counsel for divorce, custody, and adoption matters.",
     icon: HeartHandshake,
-    photoUrl: "https://i.pravatar.cc/300?img=1",
+    photoUrl: "https://i.pravatar.cc/300?img=26",
   },
   {
     id: "2",
@@ -87,7 +87,7 @@ const EXPERTS = [
     location: "New York, NY",
     description: "Wrongful termination, workplace discrimination, and contract review.",
     icon: User,
-    photoUrl: "https://i.pravatar.cc/300?img=2",
+    photoUrl: "https://i.pravatar.cc/300?img=59",
   },
   {
     id: "3",
@@ -97,7 +97,7 @@ const EXPERTS = [
     location: "Miami, FL",
     description: "Visas, green cards, naturalization, and deportation defense.",
     icon: MapPin,
-    photoUrl: "https://i.pravatar.cc/300?img=3",
+    photoUrl: "https://i.pravatar.cc/300?img=42",
   },
   {
     id: "4",
@@ -107,7 +107,7 @@ const EXPERTS = [
     location: "Chicago, IL",
     description: "Auto accidents, slips and falls, and medical malpractice claims.",
     icon: Shield,
-    photoUrl: "https://i.pravatar.cc/300?img=4",
+    photoUrl: "https://i.pravatar.cc/300?img=53",
   },
   {
     id: "5",
@@ -117,7 +117,7 @@ const EXPERTS = [
     location: "Atlanta, GA",
     description: "DUI, misdemeanors, felonies, and expungement support.",
     icon: Gavel,
-    photoUrl: "https://i.pravatar.cc/300?img=5",
+    photoUrl: "https://i.pravatar.cc/300?img=47",
   },
   {
     id: "6",
@@ -127,7 +127,7 @@ const EXPERTS = [
     location: "Seattle, WA",
     description: "Eviction defense, landlord disputes, and lease reviews.",
     icon: Home,
-    photoUrl: "https://i.pravatar.cc/300?img=6",
+    photoUrl: "https://i.pravatar.cc/300?img=17",
   },
   {
     id: "7",
@@ -137,7 +137,7 @@ const EXPERTS = [
     location: "Houston, TX",
     description: "Wills, trusts, probate, and powers of attorney.",
     icon: FileText,
-    photoUrl: "https://i.pravatar.cc/300?img=12",
+    photoUrl: "https://i.pravatar.cc/300?img=32",
   },
   {
     id: "8",
@@ -147,7 +147,7 @@ const EXPERTS = [
     location: "Austin, TX",
     description: "Business formation, contract drafting, and partnership disputes.",
     icon: Building2,
-    photoUrl: "https://i.pravatar.cc/300?img=8",
+    photoUrl: "https://i.pravatar.cc/300?img=51",
   },
   {
     id: "9",
@@ -157,7 +157,7 @@ const EXPERTS = [
     location: "Los Angeles, CA",
     description: "Trademarks, copyrights, patents, and licensing agreements.",
     icon: Copyright,
-    photoUrl: "https://i.pravatar.cc/300?img=9",
+    photoUrl: "https://i.pravatar.cc/300?img=45",
   },
 ];
 
