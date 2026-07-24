@@ -77,6 +77,7 @@ const EXPERTS = [
     location: "San Francisco, CA",
     description: "Compassionate counsel for divorce, custody, and adoption matters.",
     icon: HeartHandshake,
+    photoUrl: "https://i.pravatar.cc/300?img=1",
   },
   {
     id: "2",
@@ -86,6 +87,7 @@ const EXPERTS = [
     location: "New York, NY",
     description: "Wrongful termination, workplace discrimination, and contract review.",
     icon: User,
+    photoUrl: "https://i.pravatar.cc/300?img=2",
   },
   {
     id: "3",
@@ -95,6 +97,7 @@ const EXPERTS = [
     location: "Miami, FL",
     description: "Visas, green cards, naturalization, and deportation defense.",
     icon: MapPin,
+    photoUrl: "https://i.pravatar.cc/300?img=3",
   },
   {
     id: "4",
@@ -104,6 +107,7 @@ const EXPERTS = [
     location: "Chicago, IL",
     description: "Auto accidents, slips and falls, and medical malpractice claims.",
     icon: Shield,
+    photoUrl: "https://i.pravatar.cc/300?img=4",
   },
   {
     id: "5",
@@ -113,6 +117,7 @@ const EXPERTS = [
     location: "Atlanta, GA",
     description: "DUI, misdemeanors, felonies, and expungement support.",
     icon: Gavel,
+    photoUrl: "https://i.pravatar.cc/300?img=5",
   },
   {
     id: "6",
@@ -122,6 +127,7 @@ const EXPERTS = [
     location: "Seattle, WA",
     description: "Eviction defense, landlord disputes, and lease reviews.",
     icon: Home,
+    photoUrl: "https://i.pravatar.cc/300?img=6",
   },
   {
     id: "7",
@@ -131,6 +137,7 @@ const EXPERTS = [
     location: "Houston, TX",
     description: "Wills, trusts, probate, and powers of attorney.",
     icon: FileText,
+    photoUrl: "https://i.pravatar.cc/300?img=12",
   },
   {
     id: "8",
@@ -140,6 +147,7 @@ const EXPERTS = [
     location: "Austin, TX",
     description: "Business formation, contract drafting, and partnership disputes.",
     icon: Building2,
+    photoUrl: "https://i.pravatar.cc/300?img=8",
   },
   {
     id: "9",
@@ -149,6 +157,7 @@ const EXPERTS = [
     location: "Los Angeles, CA",
     description: "Trademarks, copyrights, patents, and licensing agreements.",
     icon: Copyright,
+    photoUrl: "https://i.pravatar.cc/300?img=9",
   },
 ];
 
@@ -468,14 +477,26 @@ function ExpertCard({
     location: string;
     description: string;
     icon: React.ElementType;
+    photoUrl: string;
   };
 }) {
+  const [imageError, setImageError] = useState(false);
   const Icon = expert.icon;
   return (
     <div className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md">
       <div className="mb-4 flex items-start justify-between">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Icon className="size-6 text-primary" />
+        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary/10">
+          {!imageError ? (
+            <img
+              src={expert.photoUrl}
+              alt={expert.name}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <Icon className="size-6 text-primary" />
+          )}
         </div>
         <div className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
           <BadgeCheck className="size-3.5" />
