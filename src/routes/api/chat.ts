@@ -1,4 +1,4 @@
-import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
+import { createOpenAI } from "@ai-sdk/openai";
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 
@@ -21,15 +21,14 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Messages are required", { status: 400 });
         }
 
-        const key = process.env.LOVABLE_API_KEY;
+        const key = process.env.OPENAI_API_KEY;
         if (!key) {
-          return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+          return new Response("Missing OPENAI_API_KEY", { status: 500 });
         }
 
-        const gateway = createLovableAiGatewayProvider(key);
-        const model = gateway("google/gemini-3-flash-preview");
+        const openai = createOpenAI({ apiKey: key });
         const result = streamText({
-          model,
+          model: openai("gpt-4o"),
           system: SYSTEM_PROMPT,
           messages: await convertToModelMessages(messages as UIMessage[]),
         });
