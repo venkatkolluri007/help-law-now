@@ -162,7 +162,6 @@ const QUICK_PROMPTS = [
 const WELCOME_MESSAGE: UIMessage = {
   id: "welcome",
   role: "assistant",
-  content: "Hi — I'm here to help you make sense of your legal situation. I won't give legal advice, but I can ask a few questions and point you toward the right expert. What brings you here today?",
   parts: [
     {
       type: "text",
