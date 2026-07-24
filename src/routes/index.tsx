@@ -28,12 +28,12 @@ import {
   Gavel,
   HeartHandshake,
   Home,
+  Lock,
   MapPin,
   MessageCircle,
   Scale,
   Search,
   Shield,
-  Sparkles,
   User,
 } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
