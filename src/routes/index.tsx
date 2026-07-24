@@ -477,14 +477,26 @@ function ExpertCard({
     location: string;
     description: string;
     icon: React.ElementType;
+    photoUrl: string;
   };
 }) {
+  const [imageError, setImageError] = useState(false);
   const Icon = expert.icon;
   return (
     <div className="group flex flex-col rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-md">
       <div className="mb-4 flex items-start justify-between">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-          <Icon className="size-6 text-primary" />
+        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary/10">
+          {!imageError ? (
+            <img
+              src={expert.photoUrl}
+              alt={expert.name}
+              className="h-full w-full object-cover"
+              loading="lazy"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <Icon className="size-6 text-primary" />
+          )}
         </div>
         <div className="flex items-center gap-1 rounded-full bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
           <BadgeCheck className="size-3.5" />
