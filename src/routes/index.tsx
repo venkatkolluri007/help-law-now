@@ -122,14 +122,16 @@ function HomePage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: "#050509" }}>
-      {/* Ambient page-level glow */}
+      {/* Ambient page-level glow bleeding around the frame */}
       <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute -top-40 -left-40 h-[38rem] w-[38rem] rounded-full mesh-orb-a"
-          style={{ background: "radial-gradient(circle, oklch(0.68 0.28 350 / 0.35), transparent 70%)", filter: "blur(80px)" }} />
-        <div className="absolute top-1/2 -right-40 h-[42rem] w-[42rem] rounded-full mesh-orb-b"
-          style={{ background: "radial-gradient(circle, oklch(0.7 0.22 220 / 0.32), transparent 70%)", filter: "blur(80px)" }} />
-        <div className="absolute bottom-0 left-1/3 h-[32rem] w-[32rem] rounded-full mesh-orb-a"
-          style={{ background: "radial-gradient(circle, oklch(0.62 0.24 300 / 0.25), transparent 70%)", filter: "blur(80px)" }} />
+        <div className="absolute -top-20 -left-20 h-[46rem] w-[46rem] rounded-full mesh-orb-a"
+          style={{ background: "radial-gradient(circle, oklch(0.68 0.28 350 / 0.75), transparent 70%)", filter: "blur(60px)" }} />
+        <div className="absolute top-1/3 -right-32 h-[50rem] w-[50rem] rounded-full mesh-orb-b"
+          style={{ background: "radial-gradient(circle, oklch(0.7 0.22 220 / 0.7), transparent 70%)", filter: "blur(70px)" }} />
+        <div className="absolute bottom-0 left-1/4 h-[38rem] w-[38rem] rounded-full mesh-orb-a"
+          style={{ background: "radial-gradient(circle, oklch(0.62 0.24 300 / 0.55), transparent 70%)", filter: "blur(70px)" }} />
+        <div className="absolute -bottom-24 right-1/4 h-[36rem] w-[36rem] rounded-full mesh-orb-b"
+          style={{ background: "radial-gradient(circle, oklch(0.68 0.28 350 / 0.5), transparent 70%)", filter: "blur(70px)" }} />
       </div>
 
       {/* Floating frame with ambient glow bleeding outside */}
