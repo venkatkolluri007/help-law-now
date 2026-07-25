@@ -140,7 +140,7 @@ function HomePage() {
           <div className="ambient-glow" />
           <div className="ambient-frame">
             <Header />
-            <Hero onQuickStart={() => document.getElementById("chat")?.scrollIntoView({ behavior: "smooth" })} />
+            <Hero onQuickStart={() => scrollToId("chat")} />
             <RunwayStrip />
             <WhyAllySection />
             <HowItWorks />
@@ -247,7 +247,7 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
             </p>
 
             <ScalesOfJustice
-              onLeft={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}
+              onLeft={() => scrollToId("how")}
               onRight={onQuickStart}
             />
 
@@ -365,6 +365,14 @@ function FakeBubble({ side, children, delay = 0 }: { side: "user" | "assistant";
 }
 
 /* ---------------- Scales of justice hero CTA ---------------- */
+
+function scrollToId(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const y = el.getBoundingClientRect().top + window.scrollY - 16;
+  window.scrollTo({ top: y, behavior: "smooth" });
+}
+
 
 function ScalesOfJustice({ onLeft, onRight }: { onLeft: () => void; onRight: () => void }) {
   // side = which pan has "landed" (visibly heavier)
