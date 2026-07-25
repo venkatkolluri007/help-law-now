@@ -394,7 +394,7 @@ function ScalesOfJustice({ onLeft, onRight }: { onLeft: () => void; onRight: () 
 
   return (
     <div className="relative select-none" role="group" aria-label="Choose a path">
-      <div className="relative mx-auto flex w-full max-w-xl items-start justify-center pt-6">
+      <div className="relative mx-auto flex w-full max-w-xl items-start justify-center pt-6 pb-40 min-h-[240px]">
         {/* Beam pivot layer */}
         <motion.div
           className="relative flex w-full items-start justify-center"
