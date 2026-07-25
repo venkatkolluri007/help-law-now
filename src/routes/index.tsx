@@ -140,7 +140,7 @@ function HomePage() {
           <div className="ambient-glow" />
           <div className="ambient-frame">
             <Header />
-            <Hero onQuickStart={() => document.getElementById("chat")?.scrollIntoView({ behavior: "smooth" })} />
+            <Hero onQuickStart={() => scrollToId("chat")} />
             <RunwayStrip />
             <WhyAllySection />
             <HowItWorks />
