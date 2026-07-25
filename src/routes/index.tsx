@@ -247,7 +247,7 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
             </p>
 
             <ScalesOfJustice
-              onLeft={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}
+              onLeft={() => scrollToId("how")}
               onRight={onQuickStart}
             />
 
