@@ -119,7 +119,7 @@ function HomePage() {
   useEffect(() => {
     const prev = previousStatusRef.current;
     if (status === "ready" && (prev === "streaming" || prev === "submitted")) {
-      composerRef.current?.querySelector("textarea")?.focus();
+      composerRef.current?.querySelector("textarea")?.focus({ preventScroll: true });
     }
     previousStatusRef.current = status;
   }, [status]);
