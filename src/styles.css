@@ -155,3 +155,84 @@
     scroll-behavior: smooth;
   }
 }
+
+/* ---------- Motion / 3D utilities ---------- */
+
+@keyframes ally-mesh-drift {
+  0%, 100% { transform: translate3d(0,0,0) scale(1); }
+  50% { transform: translate3d(4%, -3%, 0) scale(1.08); }
+}
+@keyframes ally-mesh-drift-2 {
+  0%, 100% { transform: translate3d(0,0,0) scale(1.1); }
+  50% { transform: translate3d(-5%, 4%, 0) scale(1); }
+}
+@keyframes ally-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(2deg); }
+}
+@keyframes ally-float-slow {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-22px) rotate(3deg); }
+}
+@keyframes ally-shimmer-move {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes ally-pulse-ring {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+@utility mesh-orb-a {
+  animation: ally-mesh-drift 18s ease-in-out infinite;
+}
+@utility mesh-orb-b {
+  animation: ally-mesh-drift-2 22s ease-in-out infinite;
+}
+@utility float-3d {
+  animation: ally-float 7s ease-in-out infinite;
+  will-change: transform;
+}
+@utility float-3d-slow {
+  animation: ally-float-slow 10s ease-in-out infinite;
+  will-change: transform;
+}
+@utility perspective-1200 {
+  perspective: 1200px;
+}
+@utility text-gradient-sage {
+  background: linear-gradient(120deg,
+    oklch(0.46 0.084 186) 0%,
+    oklch(0.58 0.12 200) 40%,
+    oklch(0.65 0.14 90) 100%);
+  background-size: 200% 200%;
+  animation: ally-shimmer-move 8s linear infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@utility bg-grid-soft {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 75%);
+}
+@utility glass-panel {
+  background: color-mix(in oklab, var(--card) 78%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--foreground) 8%, transparent);
+  box-shadow:
+    0 1px 0 0 color-mix(in oklab, white 60%, transparent) inset,
+    0 30px 60px -30px color-mix(in oklab, var(--primary) 25%, transparent);
+}
+@utility pulse-ring {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 2px solid var(--primary);
+    animation: ally-pulse-ring 2.4s ease-out infinite;
+  }
+}
