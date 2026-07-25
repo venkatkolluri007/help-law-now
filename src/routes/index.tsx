@@ -132,22 +132,24 @@ function HomePage() {
           style={{ background: "radial-gradient(circle, oklch(0.62 0.24 300 / 0.25), transparent 70%)", filter: "blur(80px)" }} />
       </div>
 
-      {/* Floating frame */}
+      {/* Floating frame with ambient glow bleeding outside */}
       <div className="mx-auto max-w-[1400px] px-3 sm:px-5 lg:px-8 pt-4 pb-10">
-        <div className="ambient-frame">
+        <div className="relative">
           <div className="ambient-glow" />
-          <Header />
-          <Hero onQuickStart={() => document.getElementById("chat")?.scrollIntoView({ behavior: "smooth" })} />
-          <RunwayStrip />
-          <WhyAllySection />
-          <HowItWorks />
-          <ChatSection
-            messages={messages} status={status} stop={stop}
-            isLoading={isLoading} composerRef={composerRef}
-            handlePromptSubmit={handlePromptSubmit}
-          />
-          <DirectorySection submissions={submissions} onSubmitted={loadSubmissions} />
-          <Footer />
+          <div className="ambient-frame">
+            <Header />
+            <Hero onQuickStart={() => document.getElementById("chat")?.scrollIntoView({ behavior: "smooth" })} />
+            <RunwayStrip />
+            <WhyAllySection />
+            <HowItWorks />
+            <ChatSection
+              messages={messages} status={status} stop={stop}
+              isLoading={isLoading} composerRef={composerRef}
+              handlePromptSubmit={handlePromptSubmit}
+            />
+            <DirectorySection submissions={submissions} onSubmitted={loadSubmissions} />
+            <Footer />
+          </div>
         </div>
       </div>
     </div>
