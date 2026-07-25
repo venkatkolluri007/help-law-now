@@ -247,9 +247,10 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
             </p>
 
             <ScalesOfJustice
-              onLeft={() => scrollToId("how")}
-              onRight={() => scrollToId("chat")}
+              onLeft={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}
+              onRight={onQuickStart}
             />
+
 
 
             <div className="flex flex-wrap gap-8 pt-4">
