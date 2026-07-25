@@ -208,8 +208,7 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
     <section className="relative isolate overflow-hidden pt-16 pb-24 sm:pt-24 lg:pt-28 lg:pb-32">
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-grid-neon opacity-70" />
-        <motion.div style={{ y: y2 }} className="mesh-orb-a absolute -top-24 left-1/4 h-96 w-96 rounded-full blur-3xl"
-          style-fallback aria-hidden />
+        <motion.div style={{ y: y2 }} className="mesh-orb-a absolute -top-24 left-1/4 h-96 w-96 rounded-full blur-3xl" aria-hidden />
       </div>
 
       <motion.div style={{ opacity }} className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
