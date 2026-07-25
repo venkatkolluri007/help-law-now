@@ -364,7 +364,194 @@ function FakeBubble({ side, children, delay = 0 }: { side: "user" | "assistant";
   );
 }
 
-/* ---------------- Runway strip ---------------- */
+/* ---------------- Scales of justice hero CTA ---------------- */
+
+function ScalesOfJustice({ onLeft, onRight }: { onLeft: () => void; onRight: () => void }) {
+  // side = which pan has "landed" (visibly heavier)
+  const [side, setSide] = useState<null | "left" | "right">(null);
+  const [pressed, setPressed] = useState<null | "left" | "right">(null);
+  const tiltDeg = side === "left" ? -10 : side === "right" ? 10 : 0;
+
+  const activate = (which: "left" | "right", cb: () => void) => {
+    if (pressed) return;
+    setPressed(which);
+    setSide(which);
+    // Auto-scroll after the tilt lands
+    window.setTimeout(() => {
+      cb();
+    }, 550);
+    // Reset the visual after scroll starts so users can try again
+    window.setTimeout(() => {
+      setPressed(null);
+      setSide(null);
+    }, 1600);
+  };
+
+  const beamSpring = { type: "spring" as const, stiffness: 120, damping: 12, mass: 1.1 };
+  const panSpring = { type: "spring" as const, stiffness: 140, damping: 14, mass: 1 };
+  const leftDrop = side === "left" ? 22 : side === "right" ? -18 : 0;
+  const rightDrop = side === "right" ? 22 : side === "left" ? -18 : 0;
+
+  return (
+    <div className="relative select-none" role="group" aria-label="Choose a path">
+      <div className="relative mx-auto flex w-full max-w-xl items-start justify-center pt-6">
+        {/* Beam pivot layer */}
+        <motion.div
+          className="relative flex w-full items-start justify-center"
+          animate={{ rotate: tiltDeg }}
+          transition={beamSpring}
+          style={{ transformOrigin: "50% 34px" }}
+        >
+          {/* The beam */}
+          <div
+            className="relative h-2.5 w-[420px] max-w-full rounded-full"
+            style={{
+              background: "linear-gradient(90deg, var(--accent-teal), var(--accent-warm))",
+              boxShadow: "0 6px 16px -6px rgba(30,40,60,0.25), inset 0 1px 0 rgba(255,255,255,0.55)",
+            }}
+          >
+            {/* Beam highlight */}
+            <div className="absolute inset-x-4 top-0 h-px rounded-full bg-white/60" />
+          </div>
+
+          {/* Chains + pans */}
+          <PanArm
+            sideLabel="How it works"
+            sublabel="See the flow"
+            accent="teal"
+            anchor="left"
+            drop={leftDrop}
+            landed={side === "left"}
+            spring={panSpring}
+            onActivate={() => activate("left", onLeft)}
+          />
+          <PanArm
+            sideLabel="Start a private chat"
+            sublabel="Nothing saved"
+            accent="warm"
+            anchor="right"
+            drop={rightDrop}
+            landed={side === "right"}
+            spring={panSpring}
+            onActivate={() => activate("right", onRight)}
+          />
+        </motion.div>
+
+        {/* Fulcrum / stand */}
+        <div className="pointer-events-none absolute left-1/2 top-[24px] -translate-x-1/2 flex flex-col items-center">
+          <div
+            className="h-4 w-4 rounded-full"
+            style={{
+              background: "radial-gradient(circle at 35% 30%, #fff, var(--accent-teal) 70%)",
+              boxShadow: "0 4px 10px -2px rgba(30,40,60,0.35)",
+            }}
+          />
+          <div
+            className="mt-1 h-16 w-2 rounded-full"
+            style={{
+              background: "linear-gradient(180deg, color-mix(in oklab, var(--foreground) 45%, transparent), color-mix(in oklab, var(--foreground) 25%, transparent))",
+            }}
+          />
+          <div
+            className="h-2 w-28 rounded-full"
+            style={{
+              background: "linear-gradient(90deg, transparent, color-mix(in oklab, var(--foreground) 30%, transparent), transparent)",
+              filter: "blur(0.5px)",
+            }}
+          />
+          {/* Soft ground shadow */}
+          <div
+            className="mt-3 h-3 w-40 rounded-full"
+            style={{
+              background: "radial-gradient(ellipse at center, rgba(30,40,60,0.18), transparent 70%)",
+              filter: "blur(2px)",
+            }}
+          />
+        </div>
+      </div>
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        Tip the scale — pick a side to begin.
+      </p>
+    </div>
+  );
+}
+
+function PanArm({
+  sideLabel, sublabel, accent, anchor, drop, landed, spring, onActivate,
+}: {
+  sideLabel: string;
+  sublabel: string;
+  accent: "teal" | "warm";
+  anchor: "left" | "right";
+  drop: number;
+  landed: boolean;
+  spring: { type: "spring"; stiffness: number; damping: number; mass: number };
+  onActivate: () => void;
+}) {
+  const color = accent === "teal" ? "var(--accent-teal)" : "var(--accent-warm)";
+  const gradient = accent === "teal"
+    ? "linear-gradient(140deg, color-mix(in oklab, var(--accent-teal) 20%, white), white 70%)"
+    : "linear-gradient(140deg, color-mix(in oklab, var(--accent-warm) 22%, white), white 70%)";
+  const posClass = anchor === "left" ? "absolute left-0 -translate-x-2" : "absolute right-0 translate-x-2";
+
+  return (
+    <div className={`${posClass} top-2 flex flex-col items-center`} style={{ width: 168 }}>
+      {/* Chain */}
+      <motion.div
+        className="flex flex-col items-center"
+        animate={{ y: drop }}
+        transition={spring}
+      >
+        <div className="flex h-14 flex-col items-center justify-between py-1">
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "color-mix(in oklab, var(--foreground) 40%, transparent)" }} />
+          <span className="h-1 w-1 rounded-full" style={{ background: "color-mix(in oklab, var(--foreground) 30%, transparent)" }} />
+          <span className="h-1 w-1 rounded-full" style={{ background: "color-mix(in oklab, var(--foreground) 30%, transparent)" }} />
+          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "color-mix(in oklab, var(--foreground) 40%, transparent)" }} />
+        </div>
+
+        {/* Pan (button) */}
+        <motion.button
+          type="button"
+          onClick={onActivate}
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.94 }}
+          className="relative rounded-[999px] px-5 py-3 text-sm font-semibold shadow-md focus:outline-none focus-visible:ring-2"
+          style={{
+            background: gradient,
+            border: `1px solid ${color}`,
+            color: "var(--foreground)",
+            minWidth: 156,
+            boxShadow: `0 12px 24px -12px ${color}, 0 1px 0 rgba(255,255,255,0.7) inset`,
+          }}
+          aria-label={sideLabel}
+        >
+          <span className="block leading-tight">{sideLabel}</span>
+          <span className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {sublabel}
+          </span>
+
+          {/* Landing glow */}
+          {landed && (
+            <motion.span
+              initial={{ opacity: 0.9, scale: 0.6 }}
+              animate={{ opacity: 0, scale: 1.6 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="pointer-events-none absolute inset-0 rounded-[999px]"
+              style={{ boxShadow: `0 0 40px 8px ${color}`, background: `radial-gradient(circle, ${color}22, transparent 70%)` }}
+            />
+          )}
+        </motion.button>
+
+        {/* Pan bowl underline arc */}
+        <div
+          className="mt-0.5 h-1.5 w-24 rounded-full"
+          style={{ background: `linear-gradient(90deg, transparent, ${color}, transparent)`, opacity: 0.55 }}
+        />
+      </motion.div>
+    </div>
+  );
+}
+
 
 function RunwayStrip() {
   return (
