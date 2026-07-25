@@ -109,7 +109,7 @@ const EXPERTS = [
     location: "Chicago, IL",
     description: "Auto accidents, slips and falls, and medical malpractice claims.",
     icon: Shield,
-    photoUrl: "https://i.pravatar.cc/300?img=53",
+    photoUrl: "https://xsgames.co/randomusers/assets/avatars/male/49.jpg",
   },
   {
     id: "5",
@@ -129,7 +129,7 @@ const EXPERTS = [
     location: "Seattle, WA",
     description: "Eviction defense, landlord disputes, and lease reviews.",
     icon: Home,
-    photoUrl: "https://i.pravatar.cc/300?img=17",
+    photoUrl: "https://xsgames.co/randomusers/assets/avatars/male/57.jpg",
   },
   {
     id: "7",
