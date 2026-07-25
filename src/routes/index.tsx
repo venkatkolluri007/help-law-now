@@ -121,7 +121,7 @@ function HomePage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden" style={{ background: "#f7f5f0" }}>
+    <div className="relative min-h-screen" style={{ background: "#f7f5f0" }}>
       {/* Ambient page-level glow bleeding around the frame */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute -top-20 -left-20 h-[46rem] w-[46rem] rounded-full mesh-orb-a"
