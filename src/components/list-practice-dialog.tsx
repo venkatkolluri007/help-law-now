@@ -15,6 +15,11 @@ type Props = {
   onSubmitted?: () => void;
 };
 
+type FieldErrors = Partial<Record<
+  "full_name" | "title" | "specialty" | "location" | "description" | "photo",
+  string
+>>;
+
 export function ListPracticeDialog({ specialties, trigger, onSubmitted }: Props) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -26,32 +31,46 @@ export function ListPracticeDialog({ specialties, trigger, onSubmitted }: Props)
     description: "",
   });
   const [photo, setPhoto] = useState<File | null>(null);
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   const reset = () => {
     setForm({ full_name: "", title: "", specialty: "", location: "", description: "" });
     setPhoto(null);
+    setErrors({});
+  };
+
+  const validate = (): FieldErrors => {
+    const e: FieldErrors = {};
+    if (!form.full_name.trim()) e.full_name = "Please enter your full name.";
+    if (!form.title.trim()) e.title = "Please enter your professional title.";
+    if (!form.specialty) e.specialty = "Please choose a specialty.";
+    if (!form.location.trim()) e.location = "Please enter your location.";
+    if (!form.description.trim()) e.description = "Please add a short description.";
+    if (!photo) {
+      e.photo = "Please upload a profile photo.";
+    } else if (!photo.type.startsWith("image/")) {
+      e.photo = "Profile photo must be an image file.";
+    }
+    return e;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!photo) {
-      toast.error("Please upload a photo.");
-      return;
-    }
-    if (!form.specialty) {
-      toast.error("Please choose a specialty.");
+    const v = validate();
+    setErrors(v);
+    if (Object.keys(v).length > 0) {
+      toast.error("Please fix the highlighted fields.");
       return;
     }
     setSubmitting(true);
     try {
-      const ext = photo.name.split(".").pop() || "jpg";
+      const ext = photo!.name.split(".").pop() || "jpg";
       const path = `${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("attorney-photos")
-        .upload(path, photo, { contentType: photo.type, upsert: false });
+        .upload(path, photo!, { contentType: photo!.type, upsert: false });
       if (upErr) throw upErr;
 
-      // Long-lived signed URL (10 years) since the bucket is private
       const { data: signed, error: signErr } = await supabase.storage
         .from("attorney-photos")
         .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
@@ -82,52 +101,101 @@ export function ListPracticeDialog({ specialties, trigger, onSubmitted }: Props)
     }
   };
 
+  const clearError = (k: keyof FieldErrors) => {
+    if (errors[k]) setErrors((prev) => ({ ...prev, [k]: undefined }));
+  };
+
+  const errorText = (msg?: string) =>
+    msg ? <p className="text-xs font-medium text-destructive">{msg}</p> : null;
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>List your practice</DialogTitle>
           <DialogDescription>
-            Submit your details to appear in the directory. New listings show as “Pending review” until verified.
+            All fields are required. New listings show as “Pending review” until verified.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="full_name">Full name</Label>
-            <Input id="full_name" required maxLength={100} value={form.full_name}
-              onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+            <Label htmlFor="full_name">Full name <span className="text-destructive">*</span></Label>
+            <Input
+              id="full_name"
+              maxLength={100}
+              aria-invalid={!!errors.full_name}
+              value={form.full_name}
+              onChange={(e) => { setForm({ ...form, full_name: e.target.value }); clearError("full_name"); }}
+            />
+            {errorText(errors.full_name)}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" required maxLength={120} placeholder="e.g. Family Law Attorney"
-              value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            <Label htmlFor="title">Title <span className="text-destructive">*</span></Label>
+            <Input
+              id="title"
+              maxLength={120}
+              placeholder="e.g. Family Law Attorney"
+              aria-invalid={!!errors.title}
+              value={form.title}
+              onChange={(e) => { setForm({ ...form, title: e.target.value }); clearError("title"); }}
+            />
+            {errorText(errors.title)}
           </div>
           <div className="space-y-2">
-            <Label>Specialty</Label>
-            <Select value={form.specialty} onValueChange={(v) => setForm({ ...form, specialty: v })}>
-              <SelectTrigger><SelectValue placeholder="Choose one" /></SelectTrigger>
+            <Label>Specialty <span className="text-destructive">*</span></Label>
+            <Select
+              value={form.specialty}
+              onValueChange={(v) => { setForm({ ...form, specialty: v }); clearError("specialty"); }}
+            >
+              <SelectTrigger aria-invalid={!!errors.specialty}>
+                <SelectValue placeholder="Choose one" />
+              </SelectTrigger>
               <SelectContent>
                 {specialties.filter((s) => s !== "All").map((s) => (
                   <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {errorText(errors.specialty)}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
-            <Input id="location" required maxLength={120} placeholder="City, State"
-              value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+            <Label htmlFor="location">Location <span className="text-destructive">*</span></Label>
+            <Input
+              id="location"
+              maxLength={120}
+              placeholder="City, State"
+              aria-invalid={!!errors.location}
+              value={form.location}
+              onChange={(e) => { setForm({ ...form, location: e.target.value }); clearError("location"); }}
+            />
+            {errorText(errors.location)}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Short description</Label>
-            <Textarea id="description" required maxLength={400} rows={3}
-              value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <Label htmlFor="description">Short description <span className="text-destructive">*</span></Label>
+            <Textarea
+              id="description"
+              maxLength={400}
+              rows={3}
+              aria-invalid={!!errors.description}
+              value={form.description}
+              onChange={(e) => { setForm({ ...form, description: e.target.value }); clearError("description"); }}
+            />
+            {errorText(errors.description)}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="photo">Profile photo</Label>
-            <Input id="photo" type="file" accept="image/*" required
-              onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
+            <Label htmlFor="photo">Profile photo <span className="text-destructive">*</span></Label>
+            <Input
+              id="photo"
+              type="file"
+              accept="image/*"
+              aria-invalid={!!errors.photo}
+              onChange={(e) => { setPhoto(e.target.files?.[0] ?? null); clearError("photo"); }}
+            />
+            {photo && !errors.photo && (
+              <p className="text-xs text-muted-foreground">Selected: {photo.name}</p>
+            )}
+            {errorText(errors.photo)}
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={submitting}>
