@@ -135,7 +135,7 @@ function HomePage() {
       </div>
 
       {/* Floating frame with ambient glow bleeding outside */}
-      <div className="mx-auto max-w-[1400px] px-3 sm:px-5 lg:px-8 pt-4 pb-10">
+      <div className="relative z-10 mx-auto max-w-[1400px] px-3 sm:px-5 lg:px-8 pt-4 pb-10">
         <div className="relative">
           <div className="ambient-glow" />
           <div className="ambient-frame">
