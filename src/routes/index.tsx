@@ -121,17 +121,17 @@ function HomePage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden" style={{ background: "#050509" }}>
+    <div className="relative min-h-screen overflow-x-hidden" style={{ background: "#f7f5f0" }}>
       {/* Ambient page-level glow bleeding around the frame */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute -top-20 -left-20 h-[46rem] w-[46rem] rounded-full mesh-orb-a"
-          style={{ background: "radial-gradient(circle, oklch(0.68 0.28 350 / 0.85), transparent 70%)", filter: "blur(60px)" }} />
+          style={{ background: "radial-gradient(circle, oklch(0.72 0.15 55 / 0.85), transparent 70%)", filter: "blur(60px)" }} />
         <div className="absolute top-1/3 -right-32 h-[50rem] w-[50rem] rounded-full mesh-orb-b"
-          style={{ background: "radial-gradient(circle, oklch(0.7 0.22 220 / 0.8), transparent 70%)", filter: "blur(70px)" }} />
+          style={{ background: "radial-gradient(circle, oklch(0.6 0.12 200 / 0.8), transparent 70%)", filter: "blur(70px)" }} />
         <div className="absolute bottom-0 left-1/4 h-[38rem] w-[38rem] rounded-full mesh-orb-a"
-          style={{ background: "radial-gradient(circle, oklch(0.62 0.24 300 / 0.6), transparent 70%)", filter: "blur(70px)" }} />
+          style={{ background: "radial-gradient(circle, oklch(0.55 0.12 340 / 0.6), transparent 70%)", filter: "blur(70px)" }} />
         <div className="absolute -bottom-24 right-1/4 h-[36rem] w-[36rem] rounded-full mesh-orb-b"
-          style={{ background: "radial-gradient(circle, oklch(0.68 0.28 350 / 0.55), transparent 70%)", filter: "blur(70px)" }} />
+          style={{ background: "radial-gradient(circle, oklch(0.72 0.15 55 / 0.55), transparent 70%)", filter: "blur(70px)" }} />
       </div>
 
       {/* Floating frame with ambient glow bleeding outside */}
@@ -194,7 +194,7 @@ function Header() {
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <a href={href} className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground">
+    <a href={href} className="rounded-full px-3 py-1.5 text-muted-foreground transition-colors hover:bg-black/[0.04] hover:text-foreground">
       {children}
     </a>
   );
@@ -211,7 +211,7 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
   return (
     <section className="relative isolate overflow-hidden pt-16 pb-24 sm:pt-24 lg:pt-28 lg:pb-32">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-grid-neon opacity-70" />
+        <div className="absolute inset-0 bg-grid-soft opacity-70" />
         <motion.div style={{ y: y2 }} className="mesh-orb-a absolute -top-24 left-1/4 h-96 w-96 rounded-full blur-3xl" aria-hidden />
       </div>
 
@@ -227,11 +227,11 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
               initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1, duration: 0.5 }}
               className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium"
-              style={{ background: "color-mix(in oklab, oklch(0.68 0.28 350) 12%, transparent)", border: "1px solid color-mix(in oklab, oklch(0.68 0.28 350) 35%, transparent)", color: "oklch(0.9 0.15 340)" }}
+              style={{ background: "color-mix(in oklab, oklch(0.72 0.15 55) 12%, transparent)", border: "1px solid color-mix(in oklab, oklch(0.72 0.15 55) 35%, transparent)", color: "oklch(0.45 0.12 30)" }}
             >
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: "var(--neon-pink)" }} />
-                <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "var(--neon-pink)" }} />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: "var(--accent-warm)" }} />
+                <span className="relative inline-flex h-2 w-2 rounded-full" style={{ background: "var(--accent-warm)" }} />
               </span>
               Private · Nothing saved · Live web search
             </motion.div>
@@ -239,7 +239,7 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
             <h1 className="text-5xl font-semibold tracking-tight sm:text-6xl lg:text-[4.5rem] leading-[1.02]">
               Guided legal help,
               <br />
-              <span className="text-gradient-neon">just in time.</span>
+              <span className="text-gradient-warm">just in time.</span>
             </h1>
 
             <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
@@ -282,12 +282,12 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
             <div style={{ transform: "rotateX(6deg) rotateY(-10deg)", transformStyle: "preserve-3d" }}>
               <TiltCard>
                 <div className="relative rounded-3xl glass-card p-5 sm:p-6"
-                  style={{ boxShadow: "0 60px 120px -30px rgba(0,0,0,0.9), 0 0 60px -10px oklch(0.68 0.28 350 / 0.35)" }}>
+                  style={{ boxShadow: "0 60px 120px -30px rgba(30,40,60,0.18), 0 0 60px -10px oklch(0.72 0.15 55 / 0.35)" }}>
                   <div className="mb-4 flex items-center gap-3">
                     <div className="flex gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--neon-pink)" }} />
+                      <span className="h-2.5 w-2.5 rounded-full bg-black/15" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-black/15" />
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: "var(--accent-warm)" }} />
                     </div>
                     <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
                       <Scale className="size-3.5" /> Ally · Triage
@@ -298,14 +298,14 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
                     <FakeBubble side="assistant" delay={0.4}>Got it. Searching Avvo, Justia & Super Lawyers now…</FakeBubble>
                     <FakeBubble side="assistant" delay={1.1}>
                       <span className="flex items-center gap-2 font-medium">
-                        <Globe className="size-4" style={{ color: "var(--neon-cyan)" }} /> 4 real matches found
+                        <Globe className="size-4" style={{ color: "var(--accent-teal)" }} /> 4 real matches found
                       </span>
                     </FakeBubble>
                   </div>
                   <div className="mt-5 rounded-2xl p-3 text-xs text-muted-foreground"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    style={{ background: "rgba(30,40,60,0.04)", border: "1px solid rgba(30,40,60,0.09)" }}>
                     <span className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-medium"
-                      style={{ background: "color-mix(in oklab, var(--neon-cyan) 18%, transparent)", color: "oklch(0.9 0.12 210)" }}>
+                      style={{ background: "color-mix(in oklab, var(--accent-teal) 18%, transparent)", color: "oklch(0.4 0.1 200)" }}>
                       <Lock className="size-3" /> Ephemeral
                     </span>{" "}
                     This conversation is not stored anywhere.
@@ -323,7 +323,7 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
             >
               <div className="glass-card rounded-2xl px-3.5 py-2.5 text-xs font-medium">
                 <div className="flex items-center gap-2">
-                  <Search className="size-3.5" style={{ color: "var(--neon-pink)" }} />
+                  <Search className="size-3.5" style={{ color: "var(--accent-warm)" }} />
                   <span>Live search</span>
                 </div>
                 <div className="mt-1 text-[10px] text-muted-foreground">avvo.com · justia.com</div>
@@ -337,7 +337,7 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
             >
               <div className="glass-card rounded-2xl px-3.5 py-2.5 text-xs font-medium">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck className="size-3.5" style={{ color: "var(--neon-green)" }} />
+                  <ShieldCheck className="size-3.5" style={{ color: "var(--accent-sage)" }} />
                   <span>Zero persistence</span>
                 </div>
                 <div className="mt-1 text-[10px] text-muted-foreground">0s retention</div>
@@ -353,7 +353,7 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
 function StatChip({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col">
-      <span className="text-2xl font-semibold tracking-tight text-gradient-neon">{value}</span>
+      <span className="text-2xl font-semibold tracking-tight text-gradient-warm">{value}</span>
       <span className="text-xs uppercase tracking-wider text-muted-foreground/80 max-w-[10rem]">{label}</span>
     </div>
   );
@@ -367,8 +367,8 @@ function FakeBubble({ side, children, delay = 0 }: { side: "user" | "assistant";
       transition={{ delay: 0.6 + delay, duration: 0.5 }}
       className={cn("max-w-[85%] rounded-2xl px-3.5 py-2 text-sm", isUser ? "ml-auto text-white" : "mr-auto text-foreground")}
       style={isUser
-        ? { background: "linear-gradient(135deg, oklch(0.55 0.22 320), oklch(0.55 0.22 280))" }
-        : { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }
+        ? { background: "linear-gradient(135deg, oklch(0.55 0.12 200), oklch(0.55 0.13 220))" }
+        : { background: "rgba(30,40,60,0.06)", border: "1px solid rgba(30,40,60,0.09)" }
       }
     >
       {children}
@@ -387,7 +387,7 @@ function RunwayStrip() {
         {/* Reflection */}
         <div className="absolute left-0 right-0 top-1/2 h-16"
           style={{
-            background: "linear-gradient(180deg, oklch(0.68 0.28 350 / 0.12), transparent 80%)",
+            background: "linear-gradient(180deg, oklch(0.72 0.15 55 / 0.12), transparent 80%)",
             filter: "blur(6px)",
             transform: "translateY(2px) scaleY(-1)",
           }} />
@@ -397,7 +397,7 @@ function RunwayStrip() {
           initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
         >
           <div className="h-8 w-8 rounded-lg"
-            style={{ background: "linear-gradient(135deg, oklch(0.68 0.28 350), oklch(0.55 0.22 300))", boxShadow: "0 10px 30px -5px oklch(0.68 0.28 350 / 0.7)", transform: "rotate(20deg)" }} />
+            style={{ background: "linear-gradient(135deg, oklch(0.72 0.15 55), oklch(0.55 0.22 300))", boxShadow: "0 10px 30px -5px oklch(0.72 0.15 55 / 0.7)", transform: "rotate(20deg)" }} />
         </motion.div>
         <motion.div
           className="absolute left-[48%] -top-2 orb-bob"
@@ -405,7 +405,7 @@ function RunwayStrip() {
           initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
         >
           <div className="h-6 w-6 rounded-full"
-            style={{ background: "radial-gradient(circle at 30% 30%, oklch(0.9 0.15 210), oklch(0.6 0.2 220))", boxShadow: "0 10px 30px -5px oklch(0.7 0.22 220 / 0.7)" }} />
+            style={{ background: "radial-gradient(circle at 30% 30%, oklch(0.45 0.11 200), oklch(0.55 0.13 220))", boxShadow: "0 10px 30px -5px oklch(0.6 0.12 200 / 0.7)" }} />
         </motion.div>
         <motion.div
           className="absolute right-[15%] top-4 orb-bob"
@@ -413,7 +413,7 @@ function RunwayStrip() {
           initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
         >
           <div className="h-10 w-10 rounded-2xl"
-            style={{ background: "linear-gradient(135deg, oklch(0.62 0.24 300), oklch(0.55 0.22 320))", boxShadow: "0 10px 30px -5px oklch(0.62 0.24 300 / 0.7)", transform: "rotate(-15deg)" }} />
+            style={{ background: "linear-gradient(135deg, oklch(0.55 0.12 340), oklch(0.55 0.12 200))", boxShadow: "0 10px 30px -5px oklch(0.55 0.12 340 / 0.7)", transform: "rotate(-15deg)" }} />
         </motion.div>
       </div>
     </div>
@@ -458,22 +458,22 @@ function WhyAllySection() {
           {/* Editorial column */}
           <Reveal>
             <div className="mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest"
-              style={{ background: "color-mix(in oklab, var(--neon-pink) 12%, transparent)", color: "oklch(0.85 0.16 340)", border: "1px solid color-mix(in oklab, var(--neon-pink) 25%, transparent)" }}>
+              style={{ background: "color-mix(in oklab, var(--accent-warm) 12%, transparent)", color: "oklch(0.5 0.12 30)", border: "1px solid color-mix(in oklab, var(--accent-warm) 25%, transparent)" }}>
               Why Ally
             </div>
             <p className="text-3xl sm:text-4xl font-medium leading-[1.25] tracking-tight text-foreground/95">
               Legal help usually feels like the wrong shape of the problem. Ally is a{" "}
-              <span className="chip-neon" style={{ color: "oklch(0.85 0.16 340)" }}>live web search</span>{" "}
+              <span className="chip-warm" style={{ color: "oklch(0.5 0.12 30)" }}>live web search</span>{" "}
               triage agent that talks like a friend, points you at{" "}
-              <span className="chip-neon" style={{ color: "oklch(0.88 0.15 145)" }}>real attorneys</span>{" "}
+              <span className="chip-warm" style={{ color: "oklch(0.88 0.15 145)" }}>real attorneys</span>{" "}
               pulled from actual directories, and keeps{" "}
-              <span className="chip-neon" style={{ color: "oklch(0.85 0.15 210)" }}>zero persistence</span>{" "}
+              <span className="chip-warm" style={{ color: "oklch(0.4 0.1 200)" }}>zero persistence</span>{" "}
               of what you share. There are{" "}
-              <span className="chip-neon" style={{ color: "oklch(0.85 0.18 55)" }}>no fabricated names</span>,
+              <span className="chip-warm" style={{ color: "oklch(0.5 0.12 55)" }}>no fabricated names</span>,
               no stock photos, and no legal advice — just a shorter path from confusion to the right expert.
             </p>
             <div className="mt-8 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px w-10 bg-white/20" />
+              <span className="h-px w-10 bg-black/15" />
               Built for people in a bad moment who need a good next step.
             </div>
           </Reveal>
@@ -484,23 +484,23 @@ function WhyAllySection() {
               <motion.div
                 animate={{ rotate: 360 }} transition={{ duration: 40, ease: "linear", repeat: Infinity }}
                 className="absolute inset-0 rounded-full"
-                style={{ background: "conic-gradient(from 0deg, oklch(0.68 0.28 350), oklch(0.62 0.24 300), oklch(0.7 0.22 220), oklch(0.68 0.28 350))", filter: "blur(30px)", opacity: 0.7 }}
+                style={{ background: "conic-gradient(from 0deg, oklch(0.72 0.15 55), oklch(0.55 0.12 340), oklch(0.6 0.12 200), oklch(0.72 0.15 55))", filter: "blur(30px)", opacity: 0.7 }}
               />
               <motion.div
                 animate={{ y: [0, -14, 0], rotate: [0, 8, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
                 className="absolute inset-6 rounded-full"
                 style={{
-                  background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), oklch(0.55 0.22 320) 40%, oklch(0.35 0.15 300) 100%)",
-                  boxShadow: "0 40px 80px -20px oklch(0.55 0.22 320 / 0.7), inset -10px -20px 40px rgba(0,0,0,0.5), inset 10px 10px 30px rgba(255,255,255,0.3)",
+                  background: "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), oklch(0.55 0.12 200) 40%, oklch(0.35 0.08 220) 100%)",
+                  boxShadow: "0 40px 80px -20px oklch(0.55 0.22 320 / 0.7), inset -10px -20px 40px rgba(30,40,60,0.1), inset 10px 10px 30px rgba(255,255,255,0.3)",
                 }}
               />
               <motion.div
                 animate={{ y: [0, 10, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                 className="absolute -bottom-4 -right-4 h-14 w-14 rounded-2xl"
                 style={{
-                  background: "linear-gradient(135deg, oklch(0.7 0.22 220), oklch(0.55 0.2 250))",
-                  boxShadow: "0 20px 40px -10px oklch(0.7 0.22 220 / 0.7)",
+                  background: "linear-gradient(135deg, oklch(0.6 0.12 200), oklch(0.55 0.12 220))",
+                  boxShadow: "0 20px 40px -10px oklch(0.6 0.12 200 / 0.7)",
                   transform: "rotate(15deg)",
                 }}
               />
@@ -511,8 +511,8 @@ function WhyAllySection() {
                 <Reveal key={f.title} delay={i * 0.1}>
                   <div className="glass-card rounded-2xl p-4 flex gap-3.5 items-start">
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-                      style={{ background: "linear-gradient(135deg, oklch(0.68 0.28 350 / 0.25), oklch(0.7 0.22 220 / 0.25))", border: "1px solid rgba(255,255,255,0.08)" }}>
-                      <f.icon className="size-4.5" style={{ color: "oklch(0.9 0.12 320)" }} />
+                      style={{ background: "linear-gradient(135deg, oklch(0.72 0.15 55 / 0.25), oklch(0.6 0.12 200 / 0.25))", border: "1px solid rgba(30,40,60,0.09)" }}>
+                      <f.icon className="size-4.5" style={{ color: "oklch(0.4 0.1 260)" }} />
                     </div>
                     <div>
                       <div className="font-semibold text-sm">{f.title}</div>
@@ -544,7 +544,7 @@ function HowItWorks() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <RevealHeader
           eyebrow="How it works"
-          title={<>A calm interface. <span className="text-gradient-neon">A live search under the hood.</span></>}
+          title={<>A calm interface. <span className="text-gradient-warm">A live search under the hood.</span></>}
           subtitle="Three connected surfaces do the whole job — one chat, one live-web search agent, one self-serve door for real attorneys."
         />
 
@@ -560,7 +560,7 @@ function HowItWorks() {
                     onClick={() => setActive(s.id)}
                     className={cn(
                       "relative inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                      isActive ? "text-[#08080c]" : "text-muted-foreground hover:text-foreground"
+                      isActive ? "text-background" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {isActive && (
@@ -585,14 +585,14 @@ function HowItWorks() {
           <div className="mt-10 perspective-1200">
             <div style={{ transform: "rotateX(3deg)", transformStyle: "preserve-3d" }} className="mx-auto">
               <div className="browser-frame"
-                style={{ boxShadow: "0 60px 120px -30px rgba(0,0,0,0.9), 0 0 100px -20px oklch(0.68 0.28 350 / 0.3)" }}>
+                style={{ boxShadow: "0 60px 120px -30px rgba(30,40,60,0.18), 0 0 100px -20px oklch(0.72 0.15 55 / 0.3)" }}>
                 {/* browser chrome */}
-                <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-                  <span className="h-3 w-3 rounded-full bg-white/15" />
-                  <span className="h-3 w-3 rounded-full bg-white/15" />
-                  <span className="h-3 w-3 rounded-full bg-white/15" />
+                <div className="flex items-center gap-2 border-b border-black/10 px-4 py-3">
+                  <span className="h-3 w-3 rounded-full bg-black/10" />
+                  <span className="h-3 w-3 rounded-full bg-black/10" />
+                  <span className="h-3 w-3 rounded-full bg-black/10" />
                   <div className="ml-4 flex-1 rounded-md px-3 py-1 text-xs text-muted-foreground"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    style={{ background: "rgba(30,40,60,0.05)", border: "1px solid rgba(30,40,60,0.09)" }}>
                     ally.ai/chat
                   </div>
                 </div>
@@ -673,7 +673,7 @@ function MockupList() {
         <div className="space-y-2.5">
           {["Full name", "Title", "Specialty", "Location", "Short description", "Profile photo"].map((f) => (
             <div key={f} className="rounded-lg px-3 py-2 text-sm"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              style={{ background: "rgba(30,40,60,0.05)", border: "1px solid rgba(30,40,60,0.09)" }}>
               <span className="text-muted-foreground">{f}</span>{" "}
               <span style={{ color: "oklch(0.85 0.18 340)" }}>*</span>
             </div>
@@ -682,16 +682,16 @@ function MockupList() {
       </div>
       <div className="glass-card rounded-2xl p-4">
         <div className="mb-3 text-xs text-muted-foreground">Preview</div>
-        <div className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="rounded-xl p-4" style={{ background: "rgba(30,40,60,0.04)", border: "1px solid rgba(30,40,60,0.09)" }}>
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full" style={{ background: "linear-gradient(135deg, oklch(0.68 0.28 350), oklch(0.62 0.24 300))" }} />
+            <div className="h-12 w-12 rounded-full" style={{ background: "linear-gradient(135deg, oklch(0.72 0.15 55), oklch(0.55 0.12 340))" }} />
             <div>
               <div className="text-sm font-semibold">Your name</div>
               <div className="text-xs text-muted-foreground">Employment attorney · Seattle</div>
             </div>
           </div>
           <div className="mt-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px]"
-            style={{ background: "rgba(255,255,255,0.08)", color: "oklch(0.85 0.05 260)" }}>
+            style={{ background: "rgba(30,40,60,0.09)", color: "oklch(0.4 0.02 260)" }}>
             <Clock className="size-3" /> Pending review
           </div>
         </div>
@@ -702,18 +702,18 @@ function MockupList() {
 function MockRow({ label, value, tone }: { label: string; value: string; tone: "pink"|"cyan"|"green"|"orange"|"purple" }) {
   return (
     <div className="flex items-center justify-between rounded-lg px-3 py-2"
-      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+      style={{ background: "rgba(30,40,60,0.04)", border: "1px solid rgba(30,40,60,0.09)" }}>
       <span className="text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
       <span className="text-sm font-medium" style={{ color: toneColor(tone) }}>{value}</span>
     </div>
   );
 }
 function toneColor(t: "pink"|"cyan"|"green"|"orange"|"purple") {
-  return t === "pink" ? "oklch(0.85 0.16 340)"
-    : t === "cyan" ? "oklch(0.85 0.15 210)"
-    : t === "green" ? "oklch(0.85 0.18 145)"
-    : t === "orange" ? "oklch(0.85 0.18 55)"
-    : "oklch(0.8 0.18 300)";
+  return t === "pink" ? "oklch(0.5 0.12 30)"
+    : t === "cyan" ? "oklch(0.4 0.1 200)"
+    : t === "green" ? "oklch(0.4 0.1 145)"
+    : t === "orange" ? "oklch(0.5 0.12 55)"
+    : "oklch(0.5 0.12 300)";
 }
 
 /* ---------------- Chat ---------------- */
@@ -731,25 +731,25 @@ function ChatSection({
     <section id="chat" className="relative py-20 sm:py-28">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute left-1/2 top-0 h-[30rem] w-[60rem] -translate-x-1/2 rounded-full blur-3xl"
-          style={{ background: "radial-gradient(circle, oklch(0.68 0.28 350 / 0.18), transparent 70%)" }} />
+          style={{ background: "radial-gradient(circle, oklch(0.72 0.15 55 / 0.18), transparent 70%)" }} />
       </div>
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <RevealHeader
           eyebrow="Chat"
-          title={<>Talk it through. <span className="text-gradient-neon">In private.</span></>}
+          title={<>Talk it through. <span className="text-gradient-warm">In private.</span></>}
           subtitle="No account. No history. Nothing stored. When you close this tab, this conversation is gone."
         />
 
         <Reveal>
           <div className="mt-12">
             <div className="browser-frame overflow-hidden"
-              style={{ boxShadow: "0 60px 120px -30px rgba(0,0,0,0.9), 0 0 80px -20px oklch(0.68 0.28 350 / 0.25)" }}>
-              <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4"
-                style={{ background: "linear-gradient(90deg, oklch(0.68 0.28 350 / 0.08), transparent)" }}>
+              style={{ boxShadow: "0 60px 120px -30px rgba(30,40,60,0.18), 0 0 80px -20px oklch(0.72 0.15 55 / 0.25)" }}>
+              <div className="flex items-center gap-3 border-b border-black/10 px-5 py-4"
+                style={{ background: "linear-gradient(90deg, oklch(0.72 0.15 55 / 0.08), transparent)" }}>
                 <div className="relative flex h-10 w-10 items-center justify-center rounded-full"
-                  style={{ background: "color-mix(in oklab, var(--neon-pink) 20%, transparent)" }}>
-                  <Scale className="size-5" style={{ color: "oklch(0.9 0.15 340)" }} />
-                  <span className="absolute inset-0 rounded-full animate-ping" style={{ border: "2px solid oklch(0.68 0.28 350 / 0.4)" }} />
+                  style={{ background: "color-mix(in oklab, var(--accent-warm) 20%, transparent)" }}>
+                  <Scale className="size-5" style={{ color: "oklch(0.45 0.12 30)" }} />
+                  <span className="absolute inset-0 rounded-full animate-ping" style={{ border: "2px solid oklch(0.72 0.15 55 / 0.4)" }} />
                 </div>
                 <div>
                   <h2 className="font-semibold">Legal Triage Assistant</h2>
@@ -788,7 +788,7 @@ function ChatSection({
                 <ConversationScrollButton className="absolute bottom-4 right-4" />
               </Conversation>
 
-              <div className="border-t border-white/10 p-4">
+              <div className="border-t border-black/10 p-4">
                 {messages.length === 1 && (
                   <div className="mb-3 flex flex-wrap gap-2">
                     {QUICK_PROMPTS.map((prompt, i) => (
@@ -800,7 +800,7 @@ function ChatSection({
                         type="button"
                         onClick={() => handlePromptSubmit({ text: prompt, files: [] })}
                         className="rounded-full px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)" }}
+                        style={{ background: "rgba(30,40,60,0.05)", border: "1px solid rgba(30,40,60,0.1)" }}
                       >
                         {prompt}
                       </motion.button>
@@ -812,7 +812,7 @@ function ChatSection({
                   <PromptInput onSubmit={handlePromptSubmit} className="flex flex-col gap-2">
                     <PromptInputTextarea
                       placeholder="Describe your legal situation..."
-                      className="min-h-[5rem] resize-none rounded-xl border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:bg-white/[0.05]"
+                      className="min-h-[5rem] resize-none rounded-xl border-black/10 bg-black/[0.03] px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:bg-black/[0.05]"
                       disabled={isLoading}
                     />
                     <PromptInputFooter className="justify-end">
@@ -861,19 +861,19 @@ function DirectorySection({ submissions, onSubmitted }: { submissions: Submissio
         <div className="relative overflow-hidden rounded-[2rem] glass-panel p-8 sm:p-12">
           <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
             <div className="mesh-orb-a absolute -right-32 -top-32 h-96 w-96 rounded-full blur-3xl"
-              style={{ background: "oklch(0.68 0.28 350 / 0.25)" }} />
+              style={{ background: "oklch(0.72 0.15 55 / 0.25)" }} />
             <div className="mesh-orb-b absolute -left-24 bottom-0 h-80 w-80 rounded-full blur-3xl"
-              style={{ background: "oklch(0.7 0.22 220 / 0.25)" }} />
+              style={{ background: "oklch(0.6 0.12 200 / 0.25)" }} />
           </div>
 
           <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
               <div className="mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest"
-                style={{ background: "color-mix(in oklab, var(--neon-cyan) 15%, transparent)", color: "oklch(0.9 0.12 210)", border: "1px solid color-mix(in oklab, var(--neon-cyan) 30%, transparent)" }}>
+                style={{ background: "color-mix(in oklab, var(--accent-teal) 15%, transparent)", color: "oklch(0.4 0.1 200)", border: "1px solid color-mix(in oklab, var(--accent-teal) 30%, transparent)" }}>
                 For attorneys
               </div>
               <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight leading-tight">
-                Are you a lawyer? <span className="text-gradient-neon">List your practice.</span>
+                Are you a lawyer? <span className="text-gradient-warm">List your practice.</span>
               </h2>
               <p className="mt-4 max-w-xl text-muted-foreground leading-relaxed">
                 Ally connects people who need help with real, verifiable attorneys — never fabricated profiles or stock photos. Submit your details and Ally will surface you to matching users.
@@ -892,19 +892,19 @@ function DirectorySection({ submissions, onSubmitted }: { submissions: Submissio
                   }
                 />
                 <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                  <ShieldCheck className="size-4" style={{ color: "var(--neon-cyan)" }} /> Every submission is manually reviewed before it goes live.
+                  <ShieldCheck className="size-4" style={{ color: "var(--accent-teal)" }} /> Every submission is manually reviewed before it goes live.
                 </span>
               </div>
             </div>
 
             <div>
-              <div className="rounded-2xl p-6" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="rounded-2xl p-6" style={{ background: "rgba(30,40,60,0.04)", border: "1px solid rgba(30,40,60,0.09)" }}>
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-semibold">Recent submissions</h3>
                   <span className="text-xs text-muted-foreground">{submissions.length} pending</span>
                 </div>
                 {submissions.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/10 py-10 text-center">
+                  <div className="rounded-xl border border-dashed border-black/10 py-10 text-center">
                     <p className="text-sm text-muted-foreground">No attorney has listed their practice yet. Be the first.</p>
                   </div>
                 ) : (
@@ -927,9 +927,9 @@ function SubmissionRow({ s }: { s: Submission }) {
     <motion.div
       whileHover={{ x: 4 }}
       className="flex items-center gap-4 rounded-xl p-3 transition-shadow hover:shadow-md"
-      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+      style={{ background: "rgba(30,40,60,0.05)", border: "1px solid rgba(30,40,60,0.09)" }}
     >
-      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full" style={{ background: "rgba(255,255,255,0.08)" }}>
+      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full" style={{ background: "rgba(30,40,60,0.09)" }}>
         {!imgError ? (
           <img src={s.photoUrl} alt={s.name} className="h-full w-full object-cover" loading="lazy" onError={() => setImgError(true)} />
         ) : (
@@ -940,7 +940,7 @@ function SubmissionRow({ s }: { s: Submission }) {
         <div className="flex items-center gap-2">
           <div className="truncate font-medium">{s.name}</div>
           <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-            style={{ background: "rgba(255,255,255,0.06)" }}>
+            style={{ background: "rgba(30,40,60,0.07)" }}>
             <Clock className="size-3" /> Pending review
           </span>
         </div>
@@ -967,7 +967,7 @@ function RevealHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: Re
     <Reveal>
       <div className="mx-auto max-w-3xl text-center">
         <div className="mb-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-widest"
-          style={{ background: "rgba(255,255,255,0.06)", color: "oklch(0.85 0.12 320)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          style={{ background: "rgba(30,40,60,0.07)", color: "oklch(0.4 0.08 260)", border: "1px solid rgba(30,40,60,0.1)" }}>
           {eyebrow}
         </div>
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">{title}</h2>
@@ -981,7 +981,7 @@ function RevealHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: Re
 
 function Footer() {
   return (
-    <footer className="border-t border-white/10">
+    <footer className="border-t border-black/10">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">
