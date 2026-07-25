@@ -116,6 +116,7 @@
     background-color: #f7f5f0;
     color: var(--color-foreground);
     font-feature-settings: "ss01", "cv11";
+    overflow-x: clip;
   }
   html { scroll-behavior: smooth; }
   ::selection { background: color-mix(in oklab, var(--accent-teal) 30%, transparent); color: var(--foreground); }
