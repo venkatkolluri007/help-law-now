@@ -276,6 +276,66 @@
   }
 }
 
+/* ---------- 3D press / hover interactions ---------- */
+
+@keyframes ally-glow-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--neon-pink) 55%, transparent),
+                     0 0 0 0 color-mix(in oklab, var(--neon-cyan) 40%, transparent); }
+  60%  { box-shadow: 0 0 0 10px color-mix(in oklab, var(--neon-pink) 0%, transparent),
+                     0 0 22px 6px color-mix(in oklab, var(--neon-cyan) 25%, transparent); }
+  100% { box-shadow: 0 0 0 0 transparent, 0 0 0 0 transparent; }
+}
+
+@layer base {
+  button,
+  [role="button"],
+  a.white-pill,
+  .white-pill {
+    transform: translateZ(0);
+    transition:
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      filter 200ms ease;
+    will-change: transform;
+  }
+  button:hover:not(:disabled),
+  [role="button"]:hover,
+  .white-pill:hover {
+    transform: perspective(600px) rotateX(6deg) translateY(-2px) scale(1.02);
+    box-shadow:
+      0 14px 28px -12px rgba(0, 0, 0, 0.6),
+      0 0 22px -4px color-mix(in oklab, var(--neon-pink) 40%, transparent);
+  }
+  button:active:not(:disabled),
+  [role="button"]:active,
+  .white-pill:active {
+    transform: perspective(600px) rotateX(0deg) translateY(1px) scale(0.96);
+    transition: transform 90ms ease-out, box-shadow 220ms ease-out;
+    animation: ally-glow-pulse 520ms ease-out;
+  }
+
+  .glass-card,
+  .glass-panel {
+    transition:
+      transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+  }
+  .glass-card:hover,
+  .glass-panel:hover {
+    transform: perspective(1000px) rotateX(2deg) rotateY(-2deg) translateY(-4px);
+    box-shadow:
+      0 40px 80px -30px rgba(0, 0, 0, 0.9),
+      0 0 40px -8px color-mix(in oklab, var(--neon-cyan) 25%, transparent),
+      0 1px 0 0 color-mix(in oklab, white 14%, transparent) inset;
+  }
+  .glass-card:active,
+  .glass-panel:active {
+    transform: perspective(1000px) rotateX(0) rotateY(0) translateY(0) scale(0.995);
+    transition: transform 120ms ease-out;
+  }
+}
+
 @utility browser-frame {
   border-radius: 1.25rem;
   border: 1px solid color-mix(in oklab, white 12%, transparent);
