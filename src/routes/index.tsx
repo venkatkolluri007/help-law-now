@@ -47,9 +47,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Ally AI — Guided legal help, just in time" },
-      { name: "description", content: "A dark, private, no-persistence chat that triages your legal situation and finds real attorneys with live web search." },
+      { name: "description", content: "A private, no-persistence chat that triages your legal situation and finds real attorneys with live web search." },
       { property: "og:title", content: "Ally AI — Guided legal help, just in time" },
-      { property: "og:description", content: "A dark, private, no-persistence chat that triages your legal situation and finds real attorneys with live web search." },
+      { property: "og:description", content: "A private, no-persistence chat that triages your legal situation and finds real attorneys with live web search." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
