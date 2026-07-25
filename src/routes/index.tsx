@@ -735,12 +735,12 @@ function HowItWorks() {
                     onClick={() => setActive(s.id)}
                     className={cn(
                       "relative inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                      isActive ? "text-background" : "text-muted-foreground hover:text-foreground"
+                      isActive ? "text-white" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {isActive && (
                       <motion.div layoutId="tab-pill"
-                        className="absolute inset-0 rounded-full bg-white"
+                        className="absolute inset-0 rounded-full" style={{ background: "linear-gradient(180deg, var(--accent-teal), var(--accent-warm))" }}
                         transition={{ type: "spring", stiffness: 300, damping: 25 }}
                       />
                     )}
@@ -993,7 +993,7 @@ function ChatSection({
                     <PromptInputFooter className="justify-end">
                       <PromptInputSubmit
                         status={status} onStop={stop} disabled={isLoading}
-                        className="white-pill white-pill-hover hover:bg-white"
+                        className="white-pill white-pill-hover "
                       />
                     </PromptInputFooter>
                   </PromptInput>
