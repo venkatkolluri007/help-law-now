@@ -246,24 +246,11 @@ function Hero({ onQuickStart }: { onQuickStart: () => void }) {
               Describe what's happening in plain language. Ally AI triages your situation, then searches the live web across real attorney directories to surface actual lawyers you can vet yourself.
             </p>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <motion.button
-                whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
-                onClick={onQuickStart}
-                className="white-pill white-pill-hover group inline-flex items-center gap-2 px-6 py-3.5 text-sm font-semibold"
-              >
-                <Sparkles className="size-4 transition-transform group-hover:rotate-12" />
-                Start a private chat
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-              </motion.button>
-              <motion.a
-                whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}
-                href="#how"
-                className="inline-flex items-center gap-2 rounded-full glass-panel px-6 py-3.5 text-sm font-semibold text-foreground"
-              >
-                How it works
-              </motion.a>
-            </div>
+            <ScalesOfJustice
+              onLeft={() => scrollToId("how")}
+              onRight={() => scrollToId("chat")}
+            />
+
 
             <div className="flex flex-wrap gap-8 pt-4">
               <StatChip value="15K+" label="Attorneys reachable via live search" />
