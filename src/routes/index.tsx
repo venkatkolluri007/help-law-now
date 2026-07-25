@@ -366,6 +366,14 @@ function FakeBubble({ side, children, delay = 0 }: { side: "user" | "assistant";
 
 /* ---------------- Scales of justice hero CTA ---------------- */
 
+function scrollToId(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const y = el.getBoundingClientRect().top + window.scrollY - 16;
+  window.scrollTo({ top: y, behavior: "smooth" });
+}
+
+
 function ScalesOfJustice({ onLeft, onRight }: { onLeft: () => void; onRight: () => void }) {
   // side = which pan has "landed" (visibly heavier)
   const [side, setSide] = useState<null | "left" | "right">(null);
