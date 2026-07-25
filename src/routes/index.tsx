@@ -113,7 +113,7 @@ function HomePage() {
   const previousStatusRef = useRef(status);
 
   useEffect(() => {
-    composerRef.current?.querySelector("textarea")?.focus();
+    composerRef.current?.querySelector("textarea")?.focus({ preventScroll: true });
   }, []);
 
   useEffect(() => {
