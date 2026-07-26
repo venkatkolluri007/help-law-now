@@ -1266,7 +1266,12 @@ export const Route = createFileRoute("/api/chat")({
               const needsAttorneys = reachedFinalStage && !sawAttorneyResult;
               const needsSummary = reachedFinalStage && !sawSummaryResult;
 
-              if (!needsAttorneys && !needsSummary) return;
+              if (!needsAttorneys && !needsSummary) {
+                // No extra pass: close the message ourselves since the main
+                // stream was merged with sendFinish: false.
+                writer.write({ type: "finish" });
+                return;
+              }
 
               console.warn(
                 "[api/chat] finalization pass required",
