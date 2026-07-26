@@ -19,6 +19,16 @@ type SuggestedAttorney = {
   link: string;
 };
 
+type AttorneySearchContext = {
+  location: string;
+  areaOfLaw: string;
+  budget: string;
+};
+
+type AttorneySuggestionInput = AttorneySearchContext & {
+  suggestedAttorneys: SuggestedAttorney[];
+};
+
 type IncidentSummaryInput = {
   title: string;
   situationSummary: string;
@@ -31,8 +41,8 @@ type IncidentSummaryInput = {
   urgencyDeadline: string;
   budget: string;
   areaOfLaw: string;
-  suggestedAttorneys: SuggestedAttorney[];
 };
+
 
 type AttorneyCheck = {
   attorney: SuggestedAttorney;
