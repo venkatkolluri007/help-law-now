@@ -938,6 +938,9 @@ export const Route = createFileRoute("/api/chat")({
           const modelMessages = await convertToModelMessages(messages as UIMessage[]);
           let sawSummaryResult = false;
           let sawAttorneyResult = false;
+          // Only finalize when the run actually reached the search/suggest stage —
+          // ordinary intake turns must never be forced into tool calls.
+          let reachedFinalStage = false;
           const chatTools = {
               web_search_preview: openai.tools.webSearchPreview({}),
               suggest_attorneys: tool({
