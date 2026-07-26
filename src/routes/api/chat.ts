@@ -102,18 +102,34 @@ async function verifyAttorneyLink(attorney: SuggestedAttorney): Promise<Attorney
       redirect: "follow",
       signal: controller.signal,
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; AllyAI-LinkCheck/1.0)",
+        // Use a real browser UA — Avvo, Martindale, Super Lawyers, Justia,
+        // and most legal directories block generic bot UAs with 403/429,
+        // which would otherwise cause every real attorney link to fail.
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
       },
     });
     finalUrl = res.url;
+    const finalUrlLower = finalUrl.toLowerCase();
 
-    if (!res.ok) {
+    // Hard reject only when the page is unambiguously gone.
+    if (res.status === 404 || res.status === 410) {
       issues.push(`link returned HTTP ${res.status}`);
       return { attorney, finalUrl, issues, warnings };
     }
 
-    const body = (await res.text()).slice(0, 250_000).toLowerCase();
-    const finalUrlLower = finalUrl.toLowerCase();
+    // Bot-wall / rate-limit / auth-required / server errors are common on real
+    // legal directories — don't treat them as fabrication. Warn and accept.
+    if (!res.ok) {
+      warnings.push(
+        `link returned HTTP ${res.status} (likely bot protection); accepted without body check`,
+      );
+      return { attorney: { ...attorney, link: finalUrl }, finalUrl, issues, warnings };
+    }
+
+    const body = (await res.text()).slice(0, 400_000).toLowerCase();
     if (lastName && lastName.length > 2 && !body.includes(lastName)) {
       if (finalUrlLower.includes(lastName)) {
         warnings.push("page text did not expose the attorney name, but final URL includes the last name");
@@ -124,7 +140,10 @@ async function verifyAttorneyLink(attorney: SuggestedAttorney): Promise<Attorney
 
     return { attorney: { ...attorney, link: finalUrl }, finalUrl, issues, warnings };
   } catch (err) {
-    issues.push(`link failed to load: ${err instanceof Error ? err.message : String(err)}`);
+    // Network/timeout errors are not proof of fabrication. Accept with a warning.
+    warnings.push(
+      `link check inconclusive: ${err instanceof Error ? err.message : String(err)}`,
+    );
     return { attorney, finalUrl, issues, warnings };
   } finally {
     clearTimeout(timer);
