@@ -1151,7 +1151,9 @@ function ChatMessage({
                 <IncidentSummaryCard key={i} summary={s} />
               ))}
               <MessageResponse isAnimating={false}>
-                {"Your incident summary is ready above — the attorney list and their links are included in the download. These suggestions are a starting point for your own research; verify credentials, bar standing, reviews, and fit before hiring. Not a professional referral."}
+                {summaries.some((s) => (s.suggestedAttorneys?.length ?? 0) > 0)
+                  ? "Your incident summary is ready above — the attorney list and their links are included in the download. These suggestions are a starting point for your own research; verify credentials, bar standing, reviews, and fit before hiring. Not a professional referral."
+                  : "Your incident summary is ready above and includes every detail you shared. I wasn't able to verify specific attorneys for your situation this time, so no lawyer list is included — I'd recommend searching your state bar's referral service, Avvo, Justia, or Super Lawyers directly using the summary as your starting point."}
               </MessageResponse>
             </>
           ) : (
