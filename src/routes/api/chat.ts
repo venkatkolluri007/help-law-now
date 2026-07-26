@@ -1251,7 +1251,7 @@ export const Route = createFileRoute("/api/chat")({
 
               // Wait for the main run to finish so we can tell whether the model
               // actually produced the attorney list + downloadable summary.
-              await result.text.catch(() => "");
+              await Promise.resolve(result.text).catch(() => "");
 
               const needsAttorneys = !sawAttorneyResult;
               const needsSummary = !sawSummaryResult;
@@ -1323,7 +1323,7 @@ export const Route = createFileRoute("/api/chat")({
               writer.merge(
                 finalization.toUIMessageStream({ sendStart: false, sendFinish: true }),
               );
-              await finalization.text.catch(() => "");
+              await Promise.resolve(finalization.text).catch(() => "");
             },
           });
 
