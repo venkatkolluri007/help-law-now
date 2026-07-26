@@ -75,7 +75,7 @@ const hasFailedSummaryResult = (
   steps.some((step) =>
     step.toolResults.some(
       (result) =>
-        result.toolName === "generate_incident_summary" &&
+        result.toolName === "suggest_attorneys" &&
         isRecord(result.output) &&
         result.output.ok === false,
     ),
@@ -89,7 +89,7 @@ const hasSuccessfulSummaryResult = (
   steps.some((step) =>
     step.toolResults.some(
       (result) =>
-        result.toolName === "generate_incident_summary" &&
+        result.toolName === "suggest_attorneys" &&
         isRecord(result.output) &&
         result.output.ok === true,
     ),
@@ -440,7 +440,7 @@ const parseAttorneyJson = (text: string): SuggestedAttorney[] => {
   }
 };
 
-const searchAttorneyCandidates = async (input: IncidentSummaryInput, apiKey: string) => {
+const searchAttorneyCandidates = async (input: AttorneySearchContext, apiKey: string) => {
   const prompt = `Find 3 to 5 real individual attorneys for this legal intake handoff.
 
 Location: ${input.location}
@@ -531,7 +531,7 @@ const extractInternalProfileLinks = (html: string, baseUrl: string) => {
 };
 
 const discoverVerifiedAttorneys = async (
-  input: IncidentSummaryInput,
+  input: AttorneySearchContext,
   observedSearchUrlMap: ReadonlyMap<string, string>,
   alreadyVerified: ReadonlyArray<SuggestedAttorney>,
   apiKey: string,
@@ -1061,7 +1061,7 @@ export const Route = createFileRoute("/api/chat")({
               if (previousFailedSummary && !previousSuccessfulSummary) {
                 const lastHadRejectedSummary = lastStep?.toolResults.some(
                   (result) =>
-                    result.toolName === "generate_incident_summary" &&
+                    result.toolName === "suggest_attorneys" &&
                     isRecord(result.output) &&
                     result.output.ok === false,
                 );
@@ -1080,11 +1080,11 @@ export const Route = createFileRoute("/api/chat")({
 
                 if (lastHadRetrySearch) {
                   console.info(
-                    "[api/chat] forcing generate_incident_summary after retry search",
+                    "[api/chat] forcing suggest_attorneys after retry search",
                   );
                   return {
-                    activeTools: ["generate_incident_summary"],
-                    toolChoice: { type: "tool", toolName: "generate_incident_summary" },
+                    activeTools: ["suggest_attorneys"],
+                    toolChoice: { type: "tool", toolName: "suggest_attorneys" },
                   };
                 }
               }
@@ -1113,7 +1113,7 @@ export const Route = createFileRoute("/api/chat")({
                   toolResults: toolResults.map((result) => ({
                     toolName: result.toolName,
                     output:
-                      result.toolName === "generate_incident_summary"
+                      result.toolName !== "web_search_preview"
                         ? result.output
                         : "[web_search_preview output omitted]",
                   })),
