@@ -1045,6 +1045,13 @@ function isIncidentSummary(value: unknown): value is IncidentSummary {
 }
 
 function extractIncidentSummaryOutput(output: unknown): IncidentSummary | null {
+  if (output && typeof output === "object" && "ok" in output && output.ok === false) {
+    if ("attemptedSummary" in output) {
+      const attempted = (output as { attemptedSummary?: unknown }).attemptedSummary;
+      if (isIncidentSummary(attempted)) return attempted;
+    }
+    return null;
+  }
   if (isIncidentSummary(output)) return output;
   if (output && typeof output === "object" && "attemptedSummary" in output) {
     const attempted = (output as { attemptedSummary?: unknown }).attemptedSummary;
