@@ -1181,8 +1181,10 @@ function ChatMessage({
   if (message.role !== "assistant") return bubble(text);
 
   if (summaries.length > 0 || hasAttorneyResult) {
+    const narration = stripLinkNoise(text);
     return (
       <>
+        {narration && bubble(<MessageResponse isAnimating={false}>{narration}</MessageResponse>)}
         {hasAttorneyResult && bubble(<AttorneyLinksCard attorneys={attorneys} />)}
         {summaries.length > 0 &&
           bubble(
@@ -1203,6 +1205,30 @@ function ChatMessage({
 
   return bubble(text && <MessageResponse isAnimating={isStreaming}>{text}</MessageResponse>);
 }
+
+/**
+ * When a verified attorney card is rendered, the model sometimes also narrates the
+ * same links inline. Drop any line that carries a URL/markdown link, plus the
+ * boilerplate "download above" claim the summary card already states itself.
+ */
+function stripLinkNoise(text: string): string {
+  if (!text) return "";
+  const cleaned = text
+    .split("\n")
+    .filter((line) => {
+      const l = line.trim();
+      if (!l) return true;
+      if (/https?:\/\//i.test(l)) return false;
+      if (/\]\(/.test(l)) return false;
+      if (/incident summary/i.test(l) && /(download|above|prepared)/i.test(l)) return false;
+      return true;
+    })
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return cleaned;
+}
+
 
 function AttorneyLinksCard({ attorneys }: { attorneys: VerifiedAttorney[] }) {
   return (
