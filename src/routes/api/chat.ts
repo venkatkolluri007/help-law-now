@@ -1263,8 +1263,8 @@ export const Route = createFileRoute("/api/chat")({
               // actually produced the attorney list + downloadable summary.
               await Promise.resolve(result.text).catch(() => "");
 
-              const needsAttorneys = !sawAttorneyResult;
-              const needsSummary = !sawSummaryResult;
+              const needsAttorneys = reachedFinalStage && !sawAttorneyResult;
+              const needsSummary = reachedFinalStage && !sawSummaryResult;
 
               if (!needsAttorneys && !needsSummary) return;
 
