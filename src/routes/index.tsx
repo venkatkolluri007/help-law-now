@@ -1101,12 +1101,18 @@ function ChatMessage({
         )}
       >
         {message.role === "assistant" ? (
-          <>
-            {summaries.map((s, i) => (
-              <IncidentSummaryCard key={i} summary={s} />
-            ))}
-            {text && <MessageResponse isAnimating={isStreaming}>{text}</MessageResponse>}
-          </>
+          summaries.length > 0 ? (
+            <>
+              {summaries.map((s, i) => (
+                <IncidentSummaryCard key={i} summary={s} />
+              ))}
+              <MessageResponse isAnimating={false}>
+                {"Your incident summary is ready above — the attorney list and their links are included in the download. These suggestions are a starting point for your own research; verify credentials, bar standing, reviews, and fit before hiring. Not a professional referral."}
+              </MessageResponse>
+            </>
+          ) : (
+            text && <MessageResponse isAnimating={isStreaming}>{text}</MessageResponse>
+          )
         ) : (
           text
         )}
