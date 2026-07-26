@@ -1,4 +1,5 @@
 import { useChat } from "@ai-sdk/react";
+import { toast } from "sonner";
 import {
   Conversation,
   ConversationContent,
@@ -85,8 +86,15 @@ type Submission = {
 function HomePage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const chatTransport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
+  const [chatError, setChatError] = useState<string | null>(null);
   const { messages, sendMessage, status, stop } = useChat({
     id: "ally-ai-chat", transport: chatTransport, messages: [WELCOME_MESSAGE],
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[chat] error", error);
+      setChatError(message || "Something went wrong. Please try again.");
+      toast.error("The assistant hit a problem", { description: message.slice(0, 200) });
+    },
   });
   const isLoading = status === "submitted" || status === "streaming";
   const composerRef = useRef<HTMLDivElement>(null);
@@ -117,6 +125,7 @@ function HomePage() {
 
   const handlePromptSubmit = async ({ text }: { text: string; files: unknown[] }) => {
     if (!text.trim() || isLoading) return;
+    setChatError(null);
     await sendMessage({ text: text.trim() });
   };
 
@@ -148,7 +157,9 @@ function HomePage() {
               messages={messages} status={status} stop={stop}
               isLoading={isLoading} composerRef={composerRef}
               handlePromptSubmit={handlePromptSubmit}
+              chatError={chatError}
             />
+
             <DirectorySection submissions={submissions} onSubmitted={loadSubmissions} />
             <Footer />
           </div>
@@ -902,13 +913,14 @@ function toneColor(t: "pink"|"cyan"|"green"|"orange"|"purple") {
 /* ---------------- Chat ---------------- */
 
 function ChatSection({
-  messages, status, stop, isLoading, composerRef, handlePromptSubmit,
+  messages, status, stop, isLoading, composerRef, handlePromptSubmit, chatError,
 }: {
   messages: UIMessage[];
   status: ReturnType<typeof useChat>["status"];
   stop: () => void; isLoading: boolean;
   composerRef: React.RefObject<HTMLDivElement | null>;
   handlePromptSubmit: (v: { text: string; files: unknown[] }) => void;
+  chatError: string | null;
 }) {
   return (
     <section id="chat" className="relative py-20 sm:py-28">
@@ -965,6 +977,11 @@ function ChatSection({
                   {status === "submitted" && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Shimmer className="text-sm">Searching the web…</Shimmer>
+                    </div>
+                  )}
+                  {chatError && !isLoading && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                      The assistant couldn't finish that request. {chatError} Please send your message again.
                     </div>
                   )}
                 </ConversationContent>

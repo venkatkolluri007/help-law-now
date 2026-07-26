@@ -53,8 +53,41 @@ type AttorneyCheck = {
   bodySnippet?: string;
 };
 
+// Hard time budgets so attorney verification can never hang the chat stream.
+const ATTORNEY_STEP_BUDGET_MS = 30_000;
+const ATTORNEY_TOTAL_BUDGET_MS = 75_000;
+const MAX_ATTORNEY_ATTEMPTS = 2;
+
+async function withDeadline<T>(
+  work: Promise<T>,
+  deadline: number,
+  fallback: T,
+  label: string,
+): Promise<T> {
+  const remaining = Math.max(0, deadline - Date.now());
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((resolve) => {
+    timer = setTimeout(() => {
+      console.warn(`[api/chat] ${label} timed out after ${remaining}ms; continuing without it`);
+      resolve(fallback);
+    }, remaining);
+  });
+  try {
+    return await Promise.race([work, timeout]);
+  } catch (error) {
+    console.warn(
+      `[api/chat] ${label} threw`,
+      JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
+    );
+    return fallback;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object";
+
 
 const stepHasTool = (
   step: {
@@ -535,16 +568,18 @@ const discoverVerifiedAttorneys = async (
   observedSearchUrlMap: ReadonlyMap<string, string>,
   alreadyVerified: ReadonlyArray<SuggestedAttorney>,
   apiKey: string,
+  deadline: number,
 ) => {
+  const outOfTime = () => Date.now() > deadline;
   const discovered: SuggestedAttorney[] = [];
   const seenNames = new Set(alreadyVerified.map((attorney) => normalizeSearchText(attorney.name)));
   const observedUrls = [...observedSearchUrlMap.values()]
     .filter((url) => /^https?:\/\//i.test(url))
     .sort((a, b) => Number(isDirectoryUrl(a)) - Number(isDirectoryUrl(b)))
-    .slice(0, 14);
+    .slice(0, 8);
 
   for (const sourceUrl of observedUrls) {
-    if (discovered.length >= 2) break;
+    if (discovered.length >= 2 || outOfTime()) break;
     const firstPage = await fetchHtmlPage(sourceUrl);
     console.info(
       "[api/chat] discovery source fetch",
@@ -560,18 +595,18 @@ const discoverVerifiedAttorneys = async (
 
     const profileUrls = [firstPage.url, ...extractInternalProfileLinks(firstPage.html, firstPage.url)].slice(
       0,
-      9,
+      5,
     );
 
     for (const profileUrl of profileUrls) {
-      if (discovered.length >= 2) break;
+      if (discovered.length >= 2 || outOfTime()) break;
       const page = profileUrl === firstPage.url ? firstPage : await fetchHtmlPage(profileUrl);
       if (!page.ok) continue;
 
       const firm = extractFirmName(page.html, page.url);
       const names = extractPersonNames(page.html);
       for (const name of names) {
-        if (discovered.length >= 2) break;
+        if (discovered.length >= 2 || outOfTime()) break;
         const normalizedName = normalizeSearchText(name);
         if (seenNames.has(normalizedName)) continue;
 
@@ -595,7 +630,7 @@ const discoverVerifiedAttorneys = async (
     }
   }
 
-  if (discovered.length < 2) {
+  if (discovered.length < 2 && !outOfTime()) {
     const searchedCandidates = await searchAttorneyCandidates(input, apiKey);
     console.info(
       "[api/chat] fallback attorney search candidates",
@@ -603,7 +638,7 @@ const discoverVerifiedAttorneys = async (
     );
 
     for (const candidate of searchedCandidates) {
-      if (discovered.length >= 2) break;
+      if (discovered.length >= 2 || outOfTime()) break;
       const normalizedName = normalizeSearchText(candidate.name);
       if (seenNames.has(normalizedName)) continue;
 
@@ -843,6 +878,8 @@ Ask ONE question at a time. Skip any item the user has already told you unprompt
 
 Keep going until you have enough substance for a useful summary. Don't rush and don't ask more than one thing at a time.
 
+NEVER call web_search_preview or suggest_attorneys until you have asked about and received answers for EVERY intake item above (location, subfield, budget, what happened, when, parties, injuries/damages, evidence, desired outcome, urgency). Knowing only the issue type and the city is NOT enough — keep asking the next missing question instead. Every assistant turn must either ask the next question or complete the final steps below; never end a turn silently.
+
 WHEN YOU HAVE ENOUGH DETAIL — follow these steps in this exact order. Do NOT skip any step.
 1. FIRST use the web_search_preview tool to find real attorneys matching location + specialty + budget. Prefer accessible firm websites and official attorney bio/team pages first, then Justia, state bar directories, FindLaw, Super Lawyers, Avvo, and Martindale-Hubbell. You MUST name specific individual attorneys. If a search returns only practice-area landing pages or firm homepages, run follow-up searches for that firm's attorney/team/bio pages and use only URLs that appear directly in the search results. Run multiple searches if needed until you have 2–4 real named attorneys with URLs you actually observed in tool output.
 
@@ -892,6 +929,8 @@ export const Route = createFileRoute("/api/chat")({
           }
 
           const openai = createOpenAI({ apiKey: key });
+          const requestStartedAt = Date.now();
+          let attorneyAttempts = 0;
           const observedSearchUrls = new Set<string>();
           const observedSearchUrlMap = new Map<string, string>();
           const result = streamText({
@@ -924,45 +963,81 @@ export const Route = createFileRoute("/api/chat")({
                     .describe("2–4 real attorneys pulled from the live web search."),
                 }),
                 execute: async (input: AttorneySuggestionInput) => {
+                  attorneyAttempts += 1;
+                  const attempt = attorneyAttempts;
+                  const startedAt = Date.now();
+                  const deadline = Math.min(
+                    startedAt + ATTORNEY_STEP_BUDGET_MS,
+                    requestStartedAt + ATTORNEY_TOTAL_BUDGET_MS,
+                  );
                   const attorneys = input.suggestedAttorneys ?? [];
                   console.info(
-                    `[api/chat] attorney verification started: ${input.areaOfLaw} / ${input.location}; attorneys=${attorneys.length}`,
+                    `[api/chat] attorney verification started (attempt ${attempt}): ${input.areaOfLaw} / ${input.location}; attorneys=${attorneys.length}`,
                   );
 
-                  const checks = await Promise.all(
-                    attorneys.map((attorney) => verifyAttorneyLink(attorney, observedSearchUrls)),
-                  );
-
-                  const invalid = checks.filter((c) => c.issues.length > 0);
-                  const verified = checks.filter((c) => c.issues.length === 0).map((c) => c.attorney);
-                  const warnings = checks.flatMap((c) =>
-                    c.warnings.map((warning) => `${c.attorney.name}: ${warning}`),
-                  );
-
-                  if (verified.length < 2) {
-                    const discovered = await discoverVerifiedAttorneys(
-                      input,
-                      observedSearchUrlMap,
-                      verified,
-                      key,
+                  try {
+                    const checks = await withDeadline(
+                      Promise.all(
+                        attorneys.map((attorney) => verifyAttorneyLink(attorney, observedSearchUrls)),
+                      ),
+                      deadline,
+                      [] as AttorneyCheck[],
+                      "verifyAttorneyLink batch",
                     );
-                    discovered.forEach((attorney) => verified.push(attorney));
-                    if (discovered.length > 0) {
-                      warnings.push(
-                        `Server verified ${discovered.length} attorney(s) from live search result pages after rejecting invalid model candidates.`,
-                      );
-                    }
-                  }
 
-                  if (invalid.length > 0 && verified.length < 2) {
-                    console.warn(
-                      "[api/chat] attorney verification rejected; model must re-search",
-                      JSON.stringify({
-                        location: input.location,
-                        areaOfLaw: input.areaOfLaw,
-                        verifiedCount: verified.length,
-                        observedSearchUrlCount: observedSearchUrls.size,
-                        observedSearchUrls: [...observedSearchUrlMap.values()].slice(0, 20),
+                    const invalid = checks.filter((c) => c.issues.length > 0);
+                    const verified = checks.filter((c) => c.issues.length === 0).map((c) => c.attorney);
+                    const warnings = checks.flatMap((c) =>
+                      c.warnings.map((warning) => `${c.attorney.name}: ${warning}`),
+                    );
+
+                    if (verified.length < 2 && Date.now() < deadline) {
+                      const discovered = await withDeadline(
+                        discoverVerifiedAttorneys(
+                          input,
+                          observedSearchUrlMap,
+                          verified,
+                          key,
+                          deadline,
+                        ),
+                        deadline,
+                        [] as SuggestedAttorney[],
+                        "discoverVerifiedAttorneys",
+                      );
+                      discovered.forEach((attorney) => verified.push(attorney));
+                      if (discovered.length > 0) {
+                        warnings.push(
+                          `Server verified ${discovered.length} attorney(s) from live search result pages after rejecting invalid model candidates.`,
+                        );
+                      }
+                    }
+
+                    const retriesLeft = attempt < MAX_ATTORNEY_ATTEMPTS && Date.now() < deadline;
+
+                    if (invalid.length > 0 && verified.length < 2 && retriesLeft) {
+                      console.warn(
+                        "[api/chat] attorney verification rejected; model must re-search",
+                        JSON.stringify({
+                          attempt,
+                          location: input.location,
+                          areaOfLaw: input.areaOfLaw,
+                          verifiedCount: verified.length,
+                          observedSearchUrlCount: observedSearchUrls.size,
+                          observedSearchUrls: [...observedSearchUrlMap.values()].slice(0, 20),
+                          invalid: invalid.map((c) => ({
+                            name: c.attorney.name,
+                            firm: c.attorney.firm,
+                            link: c.attorney.link,
+                            finalUrl: c.finalUrl,
+                            reasons: c.issues,
+                          })),
+                        }),
+                      );
+                      return {
+                        ok: false,
+                        error:
+                          "Attorney links could not be verified. Run ONE more web_search_preview query now, replace the flagged entries with real named attorneys whose links you actually observed in search results, and call suggest_attorneys again. Do not repeat rejected entries. If no verifiable attorneys can be found, call suggest_attorneys with suggestedAttorneys: [] and continue to generate_incident_summary.",
+                        verifiedAttorneys: verified,
                         invalid: invalid.map((c) => ({
                           name: c.attorney.name,
                           firm: c.attorney.firm,
@@ -970,42 +1045,52 @@ export const Route = createFileRoute("/api/chat")({
                           finalUrl: c.finalUrl,
                           reasons: c.issues,
                         })),
+                      };
+                    }
+
+                    console.info(
+                      `[api/chat] attorney verification finished (attempt ${attempt}): verified=${verified.length}, filtered=${invalid.length}, ms=${Date.now() - startedAt}`,
+                    );
+
+                    return {
+                      ok: true,
+                      location: input.location,
+                      areaOfLaw: input.areaOfLaw,
+                      verifiedAttorneys: verified,
+                      verificationStatus:
+                        verified.length === 0
+                          ? "no_attorneys_found"
+                          : invalid.length > 0
+                            ? "filtered_invalid_attorneys"
+                            : "verified",
+                      verificationWarnings: warnings,
+                    };
+                  } catch (error) {
+                    console.error(
+                      "[api/chat] suggest_attorneys failed",
+                      JSON.stringify({
+                        attempt,
+                        location: input.location,
+                        areaOfLaw: input.areaOfLaw,
+                        ms: Date.now() - startedAt,
+                        error: error instanceof Error ? error.message : String(error),
                       }),
                     );
+                    // Never block the conversation on attorney search failures.
                     return {
-                      ok: false,
-                      error:
-                        "Attorney links could not be verified. Run additional web_search_preview queries now, replace the flagged entries with real named attorneys whose links you actually observed in search results, and call suggest_attorneys again. Do not repeat rejected entries. If no verifiable attorneys can be found after retries, call suggest_attorneys with suggestedAttorneys: [] and continue to generate_incident_summary.",
-                      verifiedAttorneys: verified,
-                      invalid: invalid.map((c) => ({
-                        name: c.attorney.name,
-                        firm: c.attorney.firm,
-                        link: c.attorney.link,
-                        finalUrl: c.finalUrl,
-                        reasons: c.issues,
-                      })),
+                      ok: true,
+                      location: input.location,
+                      areaOfLaw: input.areaOfLaw,
+                      verifiedAttorneys: [] as SuggestedAttorney[],
+                      verificationStatus: "attorney_search_failed",
+                      verificationWarnings: [
+                        "Attorney search could not be completed this time. Continue to generate_incident_summary and tell the user no verified attorney links are available right now.",
+                      ],
                     };
                   }
-
-                  console.info(
-                    `[api/chat] attorney verification passed: verified=${verified.length}, filtered=${invalid.length}`,
-                  );
-
-                  return {
-                    ok: true,
-                    location: input.location,
-                    areaOfLaw: input.areaOfLaw,
-                    verifiedAttorneys: verified,
-                    verificationStatus:
-                      verified.length === 0
-                        ? "no_attorneys_found"
-                        : invalid.length > 0
-                          ? "filtered_invalid_attorneys"
-                          : "verified",
-                    verificationWarnings: warnings,
-                  };
                 },
               }),
+
               generate_incident_summary: tool({
                 description:
                   "Emit a finalized, structured incident-summary document the user can download and share with an attorney. Call this exactly once, after suggest_attorneys. It must contain only the user's situation details — never attorney suggestions.",
@@ -1055,13 +1140,16 @@ export const Route = createFileRoute("/api/chat")({
               }),
 
             },
-            stopWhen: stepCountIs(50),
+            stopWhen: stepCountIs(16),
             prepareStep: ({ steps }) => {
               const lastStep = steps.at(-1);
               const previousFailedSummary = hasFailedSummaryResult(steps);
               const previousSuccessfulSummary = hasSuccessfulSummaryResult(steps);
 
-              if (previousFailedSummary && !previousSuccessfulSummary) {
+              const budgetLeft = Date.now() - requestStartedAt < ATTORNEY_TOTAL_BUDGET_MS;
+              const retriesLeft = attorneyAttempts < MAX_ATTORNEY_ATTEMPTS;
+
+              if (previousFailedSummary && !previousSuccessfulSummary && retriesLeft && budgetLeft) {
                 const lastHadRejectedSummary = lastStep?.toolResults.some(
                   (result) =>
                     result.toolName === "suggest_attorneys" &&
