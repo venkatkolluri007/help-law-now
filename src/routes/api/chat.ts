@@ -137,7 +137,85 @@ export const Route = createFileRoute("/api/chat")({
                     )
                     .describe("2–4 real attorneys pulled from the live web search."),
                 }),
-                execute: async (input) => input,
+                execute: async (input) => {
+                  const attorneys = input.suggestedAttorneys ?? [];
+                  const suspiciousUrl = (url: string) =>
+                    /\/(?:123456|654321|111111|000000)(?:\.|\/|$)/i.test(url) ||
+                    /\/profile\/[A-Z][a-z]+-[A-Z][a-z]+\/?$/.test(url) ||
+                    /\{[^}]+\}/.test(url);
+
+                  const checks = await Promise.all(
+                    attorneys.map(async (a) => {
+                      const issues: string[] = [];
+                      let finalUrl = a.link;
+                      try {
+                        if (!/^https?:\/\//i.test(a.link)) {
+                          issues.push("link is not a valid http(s) URL");
+                        } else if (suspiciousUrl(a.link)) {
+                          issues.push(
+                            "link looks fabricated (placeholder ID or pattern-based path)",
+                          );
+                        } else {
+                          const controller = new AbortController();
+                          const timer = setTimeout(() => controller.abort(), 8000);
+                          try {
+                            const res = await fetch(a.link, {
+                              redirect: "follow",
+                              signal: controller.signal,
+                              headers: {
+                                "User-Agent":
+                                  "Mozilla/5.0 (compatible; AllyAI-LinkCheck/1.0)",
+                              },
+                            });
+                            finalUrl = res.url;
+                            if (!res.ok) {
+                              issues.push(`link returned HTTP ${res.status}`);
+                            } else {
+                              const body = (await res.text()).toLowerCase();
+                              const lastName = a.name
+                                .trim()
+                                .split(/\s+/)
+                                .pop()
+                                ?.toLowerCase();
+                              if (
+                                lastName &&
+                                lastName.length > 2 &&
+                                !body.includes(lastName)
+                              ) {
+                                issues.push(
+                                  `page at final URL ${finalUrl} does not mention "${a.name}"`,
+                                );
+                              }
+                            }
+                          } finally {
+                            clearTimeout(timer);
+                          }
+                        }
+                      } catch (err) {
+                        issues.push(
+                          `link failed to load: ${err instanceof Error ? err.message : String(err)}`,
+                        );
+                      }
+                      return { attorney: a, finalUrl, issues };
+                    }),
+                  );
+
+                  const invalid = checks.filter((c) => c.issues.length > 0);
+                  if (invalid.length > 0) {
+                    return {
+                      ok: false,
+                      error:
+                        "One or more attorney links could not be verified. Run additional web_search_preview queries, replace the flagged entries with real attorneys whose links you actually observed in search results, and call generate_incident_summary again. Do not resubmit the flagged entries.",
+                      invalid: invalid.map((c) => ({
+                        name: c.attorney.name,
+                        firm: c.attorney.firm,
+                        link: c.attorney.link,
+                        reasons: c.issues,
+                      })),
+                    };
+                  }
+                  return { ok: true, ...input };
+                },
               }),
             },
             stopWhen: stepCountIs(50),
