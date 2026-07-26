@@ -1096,9 +1096,6 @@ function summaryToMarkdown(s: IncidentSummary): string {
   const today = new Date().toLocaleDateString(undefined, {
     year: "numeric", month: "long", day: "numeric",
   });
-  const attorneys = (s.suggestedAttorneys ?? [])
-    .map((a) => `- **${a.name ?? "—"}** — ${a.firm ?? ""}${a.location ? `, ${a.location}` : ""}\n  - Source: ${a.source ?? "—"}\n  - Link: ${a.link ?? "—"}`)
-    .join("\n");
   return `# ${s.title ?? "Incident Summary"}
 
 **Prepared for:** legal consultation
@@ -1130,9 +1127,6 @@ ${s.urgencyDeadline ?? "None stated"}
 ## Budget
 ${s.budget ?? "—"}
 
-## Suggested Attorneys / Firms
-${attorneys || "—"}
-
 ---
 *Prepared with Ally AI. Starting point for your own research — verify credentials, bar standing, and fit before hiring. Not a professional referral.*
 `;
@@ -1147,8 +1141,14 @@ function ChatMessage({
       p.type === "tool-generate_incident_summary")
     .map((p) => extractIncidentSummaryOutput(p.output))
     .filter((o): o is IncidentSummary => !!o && !!o.situationSummary);
+  const attorneyResults = message.parts
+    .filter((p): p is typeof p & { output?: unknown } => p.type === "tool-suggest_attorneys")
+    .map((p) => extractVerifiedAttorneys(p.output))
+    .filter((a): a is VerifiedAttorney[] => !!a);
+  const attorneys = attorneyResults.flat();
+  const hasAttorneyResult = attorneyResults.length > 0;
 
-  return (
+  const bubble = (children: React.ReactNode) => (
     <Message from={message.role} className="py-1">
       <MessageContent
         className={cn(
@@ -1156,28 +1156,82 @@ function ChatMessage({
           message.role === "user" && "group-[.is-user]:!bg-chat-user group-[.is-user]:!text-chat-user-foreground"
         )}
       >
-        {message.role === "assistant" ? (
-          summaries.length > 0 ? (
+        {children}
+      </MessageContent>
+    </Message>
+  );
+
+  if (message.role !== "assistant") return bubble(text);
+
+  if (summaries.length > 0 || hasAttorneyResult) {
+    return (
+      <>
+        {hasAttorneyResult && bubble(<AttorneyLinksCard attorneys={attorneys} />)}
+        {summaries.length > 0 &&
+          bubble(
             <>
               {summaries.map((s, i) => (
                 <IncidentSummaryCard key={i} summary={s} />
               ))}
               <MessageResponse isAnimating={false}>
-                {summaries.some((s) => (s.suggestedAttorneys?.length ?? 0) > 0)
-                  ? "Your incident summary is ready above — the attorney list and their links are included in the download. These suggestions are a starting point for your own research; verify credentials, bar standing, reviews, and fit before hiring. Not a professional referral."
-                  : "Your incident summary is ready above and includes every detail you shared. I wasn't able to verify specific attorneys for your situation this time, so no lawyer list is included — I'd recommend searching your state bar's referral service, Avvo, Justia, or Super Lawyers directly using the summary as your starting point."}
+                {attorneys.length > 0
+                  ? "Your incident summary is ready above — it covers your situation details only, and the verified attorney links are listed separately. Those suggestions are a starting point for your own research; verify credentials, bar standing, reviews, and fit before hiring. Not a professional referral."
+                  : "Your incident summary is ready above and includes every detail you shared. I wasn't able to verify specific attorneys for your situation this time — I'd recommend searching your state bar's referral service, Avvo, Justia, or Super Lawyers directly using the summary as your starting point."}
               </MessageResponse>
-            </>
+            </>,
+          )}
+      </>
+    );
+  }
+
+  return bubble(text && <MessageResponse isAnimating={isStreaming}>{text}</MessageResponse>);
+}
+
+function AttorneyLinksCard({ attorneys }: { attorneys: VerifiedAttorney[] }) {
+  return (
+    <div className="my-2 rounded-2xl border border-black/10 bg-white/80 p-4 shadow-sm backdrop-blur">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+          style={{ background: "color-mix(in oklab, var(--accent-teal) 15%, transparent)" }}>
+          <Scale className="h-[18px] w-[18px]" style={{ color: "oklch(0.4 0.1 200)" }} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Verified attorneys &amp; firms
+          </div>
+          {attorneys.length === 0 ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              No attorney links passed verification this time, so none are shown rather than risk fabricated results.
+            </p>
           ) : (
-            text && <MessageResponse isAnimating={isStreaming}>{text}</MessageResponse>
-          )
-        ) : (
-          text
-        )}
-      </MessageContent>
-    </Message>
+            <ul className="mt-2 space-y-3">
+              {attorneys.map((a, i) => (
+                <li key={`${a.link}-${i}`} className="text-sm">
+                  <a
+                    href={a.link}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="font-semibold underline decoration-black/20 underline-offset-4 hover:decoration-current"
+                  >
+                    {a.name ?? a.link}
+                  </a>
+                  <div className="text-xs text-muted-foreground">
+                    {[a.firm, a.location].filter(Boolean).join(" — ")}
+                    {a.source ? ` · ${a.source}` : ""}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            Every link above was fetched and checked server-side. Verify credentials and bar standing before hiring.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
+
 
 function IncidentSummaryCard({ summary }: { summary: IncidentSummary }) {
   const markdown = useMemo(() => summaryToMarkdown(summary), [summary]);
