@@ -299,6 +299,11 @@ const isLikelyPersonName = (name: string) => {
   return /^[A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){1,3}$/.test(cleaned);
 };
 
+const normalizeAttorneyCandidate = (attorney: SuggestedAttorney): SuggestedAttorney => {
+  const cleanedName = cleanCandidateName(attorney.name);
+  return { ...attorney, name: cleanedName || attorney.name.trim() };
+};
+
 const extractTagText = (html: string, tagName: string) => {
   const matches = [...html.matchAll(new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, "gi"))];
   return matches.map((match) => stripHtml(match[1] ?? "")).filter(Boolean);
@@ -595,7 +600,7 @@ const discoverVerifiedAttorneys = async (
       if (seenNames.has(normalizedName)) continue;
 
       const check = await verifyAttorneyLink(
-        { ...candidate, location: candidate.location || input.location },
+        { ...candidate, location: input.location },
         new Set(),
       );
       if (check.issues.length > 0) {
@@ -622,6 +627,7 @@ async function verifyAttorneyLink(
   attorney: SuggestedAttorney,
   observedSearchUrls: ReadonlySet<string>,
 ): Promise<AttorneyCheck> {
+  attorney = normalizeAttorneyCandidate(attorney);
   const issues: string[] = [];
   const warnings: string[] = [];
   let finalUrl = attorney.link;
@@ -1017,7 +1023,7 @@ export const Route = createFileRoute("/api/chat")({
                     ...input,
                     suggestedAttorneys: verified,
                     verificationStatus:
-                      attorneys.length === 0
+                      verified.length === 0
                         ? "no_attorneys_found"
                         : invalid.length > 0
                           ? "filtered_invalid_attorneys"
