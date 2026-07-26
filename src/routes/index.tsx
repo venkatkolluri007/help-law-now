@@ -1019,6 +1019,12 @@ function ChatMessage({
   message, isStreaming,
 }: { message: UIMessage & { role: "assistant" | "user" }; isStreaming: boolean }) {
   const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+  const summaries = message.parts
+    .filter((p): p is typeof p & { output?: { title?: string; markdown?: string }; state?: string } =>
+      p.type === "tool-generate_incident_summary")
+    .map((p) => p.output)
+    .filter((o): o is { title: string; markdown: string } => !!o?.markdown);
+
   return (
     <Message from={message.role} className="py-1">
       <MessageContent
@@ -1027,11 +1033,61 @@ function ChatMessage({
           message.role === "user" && "group-[.is-user]:!bg-chat-user group-[.is-user]:!text-chat-user-foreground"
         )}
       >
-        {message.role === "assistant"
-          ? <MessageResponse isAnimating={isStreaming}>{text}</MessageResponse>
-          : text}
+        {message.role === "assistant" ? (
+          <>
+            {summaries.map((s, i) => (
+              <IncidentSummaryCard key={i} title={s.title} markdown={s.markdown} />
+            ))}
+            {text && <MessageResponse isAnimating={isStreaming}>{text}</MessageResponse>}
+          </>
+        ) : (
+          text
+        )}
       </MessageContent>
     </Message>
+  );
+}
+
+function IncidentSummaryCard({ title, markdown }: { title: string; markdown: string }) {
+  const download = (ext: "md" | "txt") => {
+    const blob = new Blob([markdown], { type: ext === "md" ? "text/markdown" : "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const safe = (title || "incident-summary").replace(/[^a-z0-9\-_. ]/gi, "").trim().replace(/\s+/g, "-").toLowerCase() || "incident-summary";
+    a.href = url;
+    a.download = `${safe}.${ext}`;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+  return (
+    <div className="my-2 rounded-2xl border border-black/10 bg-white/80 p-4 shadow-sm backdrop-blur">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "color-mix(in oklab, var(--accent-teal) 15%, transparent)" }}>
+          <ClipboardList className="h-4.5 w-4.5" style={{ color: "oklch(0.4 0.1 200)" }} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Incident summary ready</div>
+          <div className="mt-0.5 truncate text-sm font-semibold">{title}</div>
+          <p className="mt-1 text-xs text-muted-foreground">A structured document based on what you shared. Bring this to your consultation.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => download("md")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-black/[0.03]">
+              Download .md
+            </button>
+            <button type="button" onClick={() => download("txt")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-black/[0.03]">
+              Download .txt
+            </button>
+          </div>
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">Preview</summary>
+            <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-black/[0.03] p-3 text-[11px] leading-relaxed">{markdown}</pre>
+          </details>
+        </div>
+      </div>
+    </div>
   );
 }
 
