@@ -1015,15 +1015,82 @@ function ChatSection({
   );
 }
 
+type IncidentSummary = {
+  title?: string;
+  situationSummary?: string;
+  dateTimeframe?: string;
+  location?: string;
+  areaOfLaw?: string;
+  partiesInvolved?: string;
+  injuriesDamages?: string;
+  evidenceAvailable?: string;
+  desiredOutcome?: string;
+  urgencyDeadline?: string;
+  budget?: string;
+  suggestedAttorneys?: Array<{
+    name?: string;
+    firm?: string;
+    location?: string;
+    source?: string;
+    link?: string;
+  }>;
+};
+
+function summaryToMarkdown(s: IncidentSummary): string {
+  const today = new Date().toLocaleDateString(undefined, {
+    year: "numeric", month: "long", day: "numeric",
+  });
+  const attorneys = (s.suggestedAttorneys ?? [])
+    .map((a) => `- **${a.name ?? "—"}** — ${a.firm ?? ""}${a.location ? `, ${a.location}` : ""}\n  - Source: ${a.source ?? "—"}\n  - Link: ${a.link ?? "—"}`)
+    .join("\n");
+  return `# ${s.title ?? "Incident Summary"}
+
+**Prepared for:** legal consultation
+**Date prepared:** ${today}
+**Area of law:** ${s.areaOfLaw ?? "—"}
+**Location:** ${s.location ?? "—"}
+
+## Situation Summary
+${s.situationSummary ?? "—"}
+
+## Date / Timeframe
+${s.dateTimeframe ?? "—"}
+
+## Parties Involved
+${s.partiesInvolved ?? "—"}
+
+## Injuries / Damages
+${s.injuriesDamages ?? "—"}
+
+## Evidence Available
+${s.evidenceAvailable ?? "—"}
+
+## Desired Outcome
+${s.desiredOutcome ?? "—"}
+
+## Urgency / Deadline
+${s.urgencyDeadline ?? "None stated"}
+
+## Budget
+${s.budget ?? "—"}
+
+## Suggested Attorneys / Firms
+${attorneys || "—"}
+
+---
+*Prepared with Ally AI. Starting point for your own research — verify credentials, bar standing, and fit before hiring. Not a professional referral.*
+`;
+}
+
 function ChatMessage({
   message, isStreaming,
 }: { message: UIMessage & { role: "assistant" | "user" }; isStreaming: boolean }) {
   const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
   const summaries = message.parts
-    .filter((p): p is typeof p & { output?: { title?: string; markdown?: string }; state?: string } =>
+    .filter((p): p is typeof p & { output?: IncidentSummary } =>
       p.type === "tool-generate_incident_summary")
     .map((p) => p.output)
-    .filter((o): o is { title: string; markdown: string } => !!o?.markdown);
+    .filter((o): o is IncidentSummary => !!o && !!o.situationSummary);
 
   return (
     <Message from={message.role} className="py-1">
@@ -1036,7 +1103,7 @@ function ChatMessage({
         {message.role === "assistant" ? (
           <>
             {summaries.map((s, i) => (
-              <IncidentSummaryCard key={i} title={s.title} markdown={s.markdown} />
+              <IncidentSummaryCard key={i} summary={s} />
             ))}
             {text && <MessageResponse isAnimating={isStreaming}>{text}</MessageResponse>}
           </>
@@ -1048,12 +1115,14 @@ function ChatMessage({
   );
 }
 
-function IncidentSummaryCard({ title, markdown }: { title: string; markdown: string }) {
+function IncidentSummaryCard({ summary }: { summary: IncidentSummary }) {
+  const markdown = useMemo(() => summaryToMarkdown(summary), [summary]);
+  const title = summary.title ?? "Incident Summary";
   const download = (ext: "md" | "txt") => {
     const blob = new Blob([markdown], { type: ext === "md" ? "text/markdown" : "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const safe = (title || "incident-summary").replace(/[^a-z0-9\-_. ]/gi, "").trim().replace(/\s+/g, "-").toLowerCase() || "incident-summary";
+    const safe = title.replace(/[^a-z0-9\-_. ]/gi, "").trim().replace(/\s+/g, "-").toLowerCase() || "incident-summary";
     a.href = url;
     a.download = `${safe}.${ext}`;
     document.body.append(a);
@@ -1065,20 +1134,20 @@ function IncidentSummaryCard({ title, markdown }: { title: string; markdown: str
     <div className="my-2 rounded-2xl border border-black/10 bg-white/80 p-4 shadow-sm backdrop-blur">
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style={{ background: "color-mix(in oklab, var(--accent-teal) 15%, transparent)" }}>
-          <ClipboardList className="h-4.5 w-4.5" style={{ color: "oklch(0.4 0.1 200)" }} />
+          <ClipboardList className="h-[18px] w-[18px]" style={{ color: "oklch(0.4 0.1 200)" }} />
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Incident summary ready</div>
-          <div className="mt-0.5 truncate text-sm font-semibold">{title}</div>
-          <p className="mt-1 text-xs text-muted-foreground">A structured document based on what you shared. Bring this to your consultation.</p>
+          <div className="mt-0.5 text-sm font-semibold">{title}</div>
+          <p className="mt-1 text-xs text-muted-foreground">Structured from what you shared — attach or forward it to an attorney.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button type="button" onClick={() => download("md")}
-              className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-black/[0.03]">
-              Download .md
+              className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1.5 text-xs font-medium text-background shadow-sm hover:opacity-90">
+              Download incident summary
             </button>
             <button type="button" onClick={() => download("txt")}
               className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-black/[0.03]">
-              Download .txt
+              .txt
             </button>
           </div>
           <details className="mt-3">
