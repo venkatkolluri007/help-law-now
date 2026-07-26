@@ -19,6 +19,16 @@ type SuggestedAttorney = {
   link: string;
 };
 
+type AttorneySearchContext = {
+  location: string;
+  areaOfLaw: string;
+  budget: string;
+};
+
+type AttorneySuggestionInput = AttorneySearchContext & {
+  suggestedAttorneys: SuggestedAttorney[];
+};
+
 type IncidentSummaryInput = {
   title: string;
   situationSummary: string;
@@ -31,8 +41,8 @@ type IncidentSummaryInput = {
   urgencyDeadline: string;
   budget: string;
   areaOfLaw: string;
-  suggestedAttorneys: SuggestedAttorney[];
 };
+
 
 type AttorneyCheck = {
   attorney: SuggestedAttorney;
@@ -65,7 +75,7 @@ const hasFailedSummaryResult = (
   steps.some((step) =>
     step.toolResults.some(
       (result) =>
-        result.toolName === "generate_incident_summary" &&
+        result.toolName === "suggest_attorneys" &&
         isRecord(result.output) &&
         result.output.ok === false,
     ),
@@ -79,7 +89,7 @@ const hasSuccessfulSummaryResult = (
   steps.some((step) =>
     step.toolResults.some(
       (result) =>
-        result.toolName === "generate_incident_summary" &&
+        result.toolName === "suggest_attorneys" &&
         isRecord(result.output) &&
         result.output.ok === true,
     ),
@@ -430,7 +440,7 @@ const parseAttorneyJson = (text: string): SuggestedAttorney[] => {
   }
 };
 
-const searchAttorneyCandidates = async (input: IncidentSummaryInput, apiKey: string) => {
+const searchAttorneyCandidates = async (input: AttorneySearchContext, apiKey: string) => {
   const prompt = `Find 3 to 5 real individual attorneys for this legal intake handoff.
 
 Location: ${input.location}
@@ -521,7 +531,7 @@ const extractInternalProfileLinks = (html: string, baseUrl: string) => {
 };
 
 const discoverVerifiedAttorneys = async (
-  input: IncidentSummaryInput,
+  input: AttorneySearchContext,
   observedSearchUrlMap: ReadonlyMap<string, string>,
   alreadyVerified: ReadonlyArray<SuggestedAttorney>,
   apiKey: string,
@@ -833,27 +843,30 @@ Ask ONE question at a time. Skip any item the user has already told you unprompt
 
 Keep going until you have enough substance for a useful summary. Don't rush and don't ask more than one thing at a time.
 
-WHEN YOU HAVE ENOUGH DETAIL — follow these steps in this exact order. Do NOT skip step 2.
+WHEN YOU HAVE ENOUGH DETAIL — follow these steps in this exact order. Do NOT skip any step.
 1. FIRST use the web_search_preview tool to find real attorneys matching location + specialty + budget. Prefer accessible firm websites and official attorney bio/team pages first, then Justia, state bar directories, FindLaw, Super Lawyers, Avvo, and Martindale-Hubbell. You MUST name specific individual attorneys. If a search returns only practice-area landing pages or firm homepages, run follow-up searches for that firm's attorney/team/bio pages and use only URLs that appear directly in the search results. Run multiple searches if needed until you have 2–4 real named attorneys with URLs you actually observed in tool output.
 
    ABSOLUTE ANTI-FABRICATION RULES — non-negotiable:
    - Every attorney name, firm name, and URL you emit MUST come verbatim from a web_search_preview result you actually received in this conversation. If you did not see it in a tool result, you do not have it.
    - NEVER invent, guess, extrapolate, or "construct" a URL. No placeholder or pattern-based IDs (e.g. /123456, /654321, /profile/First-Last, /attorneys/{zip}-{state}-{name}-{id}.html). If you find yourself typing a URL you didn't literally copy from a search result, stop.
-   - Directory pages that return 404/410, generic error pages, or unrelated redirects are NOT working links. Replace them with accessible firm bio pages or call generate_incident_summary with an empty suggestedAttorneys array.
+   - Directory pages that return 404/410, generic error pages, or unrelated redirects are NOT working links. Replace them with accessible firm bio pages or call suggest_attorneys with an empty suggestedAttorneys array.
    - NEVER pair a real firm with a made-up attorney name, or a real attorney with a guessed profile URL. Only emit an attorney if BOTH the name and a link to that specific attorney (or their firm's team/bio page naming them) appeared in your search results.
    - Generic placeholder names and firms are strictly forbidden: John Doe, Jane Doe, John Smith, Jane Smith, Emily Johnson, Michael Brown, Doe and Associates, Smith Law Office, Smith & Associates, Johnson Law Firm, Brown & Partners, and similar generic examples must be discarded and re-searched.
    - Backend verification rejects any URL that did not appear directly in web_search_preview results for this conversation, rejects 404/410/dead/error pages, and requires the fetched page text to mention the attorney's first and last name. Prefer official firm bio pages because directory pages often block verification.
-   - If after multiple searches you cannot find 2 real named attorneys with verifiable URLs, call generate_incident_summary with an empty suggestedAttorneys array rather than fabricating entries.
+   - If after multiple searches you cannot find 2 real named attorneys with verifiable URLs, call suggest_attorneys with an empty suggestedAttorneys array rather than fabricating entries.
 
-2. THEN you MUST call the \`generate_incident_summary\` tool with a fully-populated structured object using the fields defined by the tool schema, including the 2–4 suggested attorneys pulled from your live search results (each with a real link you observed). This step is mandatory — do NOT recommend attorneys in chat text without first calling this tool. Use only facts the user gave you. Neutral, factual tone. No legal conclusions.
+2. THEN you MUST call the \`suggest_attorneys\` tool with location, areaOfLaw, budget, and the 2–4 attorneys pulled from your live search results (each with a real link you observed). The verified results are rendered to the user as their own clickable list — do NOT write attorney names or URLs in chat text yourself.
 
-   If the tool returns ok:false or an error listing invalid attorney links, you MUST run additional web_search_preview queries to find replacement named attorneys and call generate_incident_summary again. Do not repeat rejected entries. Search for exact official firm bio/team pages for the specialty and city, not generic directory guesses or firm homepages. Retry with new live search results up to 3 times. If you still cannot find verifiable named attorneys after retries, call generate_incident_summary with suggestedAttorneys: [] so the downloadable incident summary still renders without fabricated lawyer data.
+   If the tool returns ok:false or an error listing invalid attorney links, you MUST run additional web_search_preview queries to find replacement named attorneys and call suggest_attorneys again. Do not repeat rejected entries. Search for exact official firm bio/team pages for the specialty and city, not generic directory guesses or firm homepages. Retry with new live search results up to 3 times. If you still cannot find verifiable named attorneys after retries, call suggest_attorneys with suggestedAttorneys: [] and continue.
 
-3. THEN, and ONLY after that tool call succeeds, reply in chat with ONE short paragraph (2–4 sentences max) that:
-   - Confirms the downloadable incident summary is ready above.
-   - If suggestedAttorneys is non-empty, reminds the user that the attorney list and links are included in the downloadable summary. If it is empty, plainly say no verified attorney links could be included this time.
+3. THEN you MUST call the \`generate_incident_summary\` tool with a fully-populated structured object using the fields defined by the tool schema. This document contains ONLY the user's situation details — it must never include attorney names, firms, or links. Use only facts the user gave you. Neutral, factual tone. No legal conclusions.
+
+4. THEN, and ONLY after both tool calls succeed, reply in chat with ONE short paragraph (2–4 sentences max) that:
+   - Confirms the downloadable incident summary is ready above and contains only their situation details.
+   - Notes that any verified attorney links are listed separately above, or plainly says none could be verified this time.
    - Adds the standard note that these are a starting point for their own research — verify credentials, bar standing, reviews, and fit before hiring; not a professional referral.
-   Your chat reply MUST NOT contain any attorney names, firm names, bullet lists, URLs, or repeated summary content. Those live only inside the incident summary rendered above. Never repeat yourself or restate the summary.
+   Your chat reply MUST NOT contain any attorney names, firm names, bullet lists, URLs, or repeated summary content. Never repeat yourself or restate the summary.
+
 
 GUARDRAILS
 - No legal advice, no outcome predictions, no fee quotes.
@@ -887,9 +900,115 @@ export const Route = createFileRoute("/api/chat")({
             messages: await convertToModelMessages(messages as UIMessage[]),
             tools: {
               web_search_preview: openai.tools.webSearchPreview({}),
+              suggest_attorneys: tool({
+                description:
+                  "Submit the real attorneys found via live web search for server-side verification. Call this once, after the intake is complete and web_search_preview has been run, and before generate_incident_summary. Verified results are rendered to the user as a separate clickable list.",
+                inputSchema: z.object({
+                  location: z.string().describe("City, state/country the user needs an attorney in."),
+                  areaOfLaw: z
+                    .string()
+                    .describe("Legal subfield, e.g. 'Family law', 'Employment', 'Personal injury'."),
+                  budget: z.string().describe("The user's stated budget or price expectations."),
+                  suggestedAttorneys: z
+                    .array(
+                      z.object({
+                        name: z.string().describe("Individual attorney's name."),
+                        firm: z.string().describe("Firm name."),
+                        location: z.string().describe("City, state."),
+                        source: z
+                          .string()
+                          .describe("Where this was found, e.g. 'Avvo', 'Firm website', 'Martindale-Hubbell'."),
+                        link: z.string().describe("Working URL to the attorney's profile or firm page."),
+                      }),
+                    )
+                    .describe("2–4 real attorneys pulled from the live web search."),
+                }),
+                execute: async (input: AttorneySuggestionInput) => {
+                  const attorneys = input.suggestedAttorneys ?? [];
+                  console.info(
+                    `[api/chat] attorney verification started: ${input.areaOfLaw} / ${input.location}; attorneys=${attorneys.length}`,
+                  );
+
+                  const checks = await Promise.all(
+                    attorneys.map((attorney) => verifyAttorneyLink(attorney, observedSearchUrls)),
+                  );
+
+                  const invalid = checks.filter((c) => c.issues.length > 0);
+                  const verified = checks.filter((c) => c.issues.length === 0).map((c) => c.attorney);
+                  const warnings = checks.flatMap((c) =>
+                    c.warnings.map((warning) => `${c.attorney.name}: ${warning}`),
+                  );
+
+                  if (verified.length < 2) {
+                    const discovered = await discoverVerifiedAttorneys(
+                      input,
+                      observedSearchUrlMap,
+                      verified,
+                      key,
+                    );
+                    discovered.forEach((attorney) => verified.push(attorney));
+                    if (discovered.length > 0) {
+                      warnings.push(
+                        `Server verified ${discovered.length} attorney(s) from live search result pages after rejecting invalid model candidates.`,
+                      );
+                    }
+                  }
+
+                  if (invalid.length > 0 && verified.length < 2) {
+                    console.warn(
+                      "[api/chat] attorney verification rejected; model must re-search",
+                      JSON.stringify({
+                        location: input.location,
+                        areaOfLaw: input.areaOfLaw,
+                        verifiedCount: verified.length,
+                        observedSearchUrlCount: observedSearchUrls.size,
+                        observedSearchUrls: [...observedSearchUrlMap.values()].slice(0, 20),
+                        invalid: invalid.map((c) => ({
+                          name: c.attorney.name,
+                          firm: c.attorney.firm,
+                          link: c.attorney.link,
+                          finalUrl: c.finalUrl,
+                          reasons: c.issues,
+                        })),
+                      }),
+                    );
+                    return {
+                      ok: false,
+                      error:
+                        "Attorney links could not be verified. Run additional web_search_preview queries now, replace the flagged entries with real named attorneys whose links you actually observed in search results, and call suggest_attorneys again. Do not repeat rejected entries. If no verifiable attorneys can be found after retries, call suggest_attorneys with suggestedAttorneys: [] and continue to generate_incident_summary.",
+                      verifiedAttorneys: verified,
+                      invalid: invalid.map((c) => ({
+                        name: c.attorney.name,
+                        firm: c.attorney.firm,
+                        link: c.attorney.link,
+                        finalUrl: c.finalUrl,
+                        reasons: c.issues,
+                      })),
+                    };
+                  }
+
+                  console.info(
+                    `[api/chat] attorney verification passed: verified=${verified.length}, filtered=${invalid.length}`,
+                  );
+
+                  return {
+                    ok: true,
+                    location: input.location,
+                    areaOfLaw: input.areaOfLaw,
+                    verifiedAttorneys: verified,
+                    verificationStatus:
+                      verified.length === 0
+                        ? "no_attorneys_found"
+                        : invalid.length > 0
+                          ? "filtered_invalid_attorneys"
+                          : "verified",
+                    verificationWarnings: warnings,
+                  };
+                },
+              }),
               generate_incident_summary: tool({
                 description:
-                  "Emit a finalized, structured incident-summary document the user can download and share with an attorney. Call this exactly once, after gathering enough detail and running the web search for attorneys.",
+                  "Emit a finalized, structured incident-summary document the user can download and share with an attorney. Call this exactly once, after suggest_attorneys. It must contain only the user's situation details — never attorney suggestions.",
                 inputSchema: z.object({
                   title: z
                     .string()
@@ -926,123 +1045,15 @@ export const Route = createFileRoute("/api/chat")({
                   areaOfLaw: z
                     .string()
                     .describe("Legal subfield, e.g. 'Family law', 'Employment', 'Personal injury'."),
-                  suggestedAttorneys: z
-                    .array(
-                      z.object({
-                        name: z.string().describe("Individual attorney's name."),
-                        firm: z.string().describe("Firm name."),
-                        location: z.string().describe("City, state."),
-                        source: z
-                          .string()
-                          .describe("Where this was found, e.g. 'Avvo', 'Firm website', 'Martindale-Hubbell'."),
-                        link: z.string().describe("Working URL to the attorney's profile or firm page."),
-                      }),
-                    )
-                    .describe("2–4 real attorneys pulled from the live web search."),
                 }),
                 execute: async (input: IncidentSummaryInput) => {
-                  const attorneys = input.suggestedAttorneys ?? [];
                   console.info(
-                    `[api/chat] incident summary verification started: ${input.areaOfLaw} / ${input.location}; attorneys=${attorneys.length}`,
+                    `[api/chat] incident summary emitted: ${input.areaOfLaw} / ${input.location}`,
                   );
-
-                  const checks = await Promise.all(
-                    attorneys.map((attorney) => verifyAttorneyLink(attorney, observedSearchUrls)),
-                  );
-
-                  const invalid = checks.filter((c) => c.issues.length > 0);
-                  const verified = checks.filter((c) => c.issues.length === 0).map((c) => c.attorney);
-                  const warnings = checks.flatMap((c) =>
-                    c.warnings.map((warning) => `${c.attorney.name}: ${warning}`),
-                  );
-
-                  if (verified.length < 2) {
-                    const discovered = await discoverVerifiedAttorneys(
-                      input,
-                      observedSearchUrlMap,
-                      verified,
-                      key,
-                    );
-                    discovered.forEach((attorney) => verified.push(attorney));
-                    if (discovered.length > 0) {
-                      warnings.push(
-                        `Server verified ${discovered.length} attorney(s) from live search result pages after rejecting invalid model candidates.`,
-                      );
-                    }
-                  }
-
-                  if (invalid.length > 0 && verified.length < 2) {
-                    console.warn(
-                      "[api/chat] incident summary verification rejected; model must re-search",
-                      JSON.stringify({
-                        location: input.location,
-                        areaOfLaw: input.areaOfLaw,
-                        verifiedCount: verified.length,
-                        observedSearchUrlCount: observedSearchUrls.size,
-                        observedSearchUrls: [...observedSearchUrlMap.values()].slice(0, 20),
-                        invalid: invalid.map((c) => ({
-                          name: c.attorney.name,
-                          firm: c.attorney.firm,
-                          link: c.attorney.link,
-                          finalUrl: c.finalUrl,
-                          reasons: c.issues,
-                        })),
-                      }),
-                    );
-                    return {
-                      ok: false,
-                      error:
-                        "Attorney links could not be verified. Run additional web_search_preview queries now, replace the flagged entries with real named attorneys whose links you actually observed in search results, and call generate_incident_summary again. Do not repeat rejected entries. If no verifiable attorneys can be found after retries, call generate_incident_summary with suggestedAttorneys: [] so the summary can still be downloaded without fabricated lawyer data.",
-                      attemptedSummary: {
-                        ...input,
-                        suggestedAttorneys: verified,
-                        verificationStatus: "verification_failed_retry_required",
-                        verificationWarnings: invalid.map(
-                          (c) =>
-                            `${c.attorney.name} — ${c.attorney.firm}: ${c.issues.join("; ")}`,
-                        ),
-                      },
-                      verifiedAttorneys: verified,
-                      invalid: invalid.map((c) => ({
-                        name: c.attorney.name,
-                        firm: c.attorney.firm,
-                        link: c.attorney.link,
-                        finalUrl: c.finalUrl,
-                        reasons: c.issues,
-                      })),
-                    };
-                  }
-
-                  if (invalid.length > 0) {
-                    console.warn(
-                      "[api/chat] incident summary accepted after filtering invalid attorney links",
-                      JSON.stringify({
-                        location: input.location,
-                        areaOfLaw: input.areaOfLaw,
-                        verifiedCount: verified.length,
-                        filteredCount: invalid.length,
-                      }),
-                    );
-                  } else {
-                    console.info(
-                      `[api/chat] incident summary verification passed: verified=${verified.length}`,
-                    );
-                  }
-
-                  return {
-                    ok: true,
-                    ...input,
-                    suggestedAttorneys: verified,
-                    verificationStatus:
-                      verified.length === 0
-                        ? "no_attorneys_found"
-                        : invalid.length > 0
-                          ? "filtered_invalid_attorneys"
-                          : "verified",
-                    verificationWarnings: warnings,
-                  };
+                  return { ok: true, ...input };
                 },
               }),
+
             },
             stopWhen: stepCountIs(50),
             prepareStep: ({ steps }) => {
@@ -1053,7 +1064,7 @@ export const Route = createFileRoute("/api/chat")({
               if (previousFailedSummary && !previousSuccessfulSummary) {
                 const lastHadRejectedSummary = lastStep?.toolResults.some(
                   (result) =>
-                    result.toolName === "generate_incident_summary" &&
+                    result.toolName === "suggest_attorneys" &&
                     isRecord(result.output) &&
                     result.output.ok === false,
                 );
@@ -1072,11 +1083,11 @@ export const Route = createFileRoute("/api/chat")({
 
                 if (lastHadRetrySearch) {
                   console.info(
-                    "[api/chat] forcing generate_incident_summary after retry search",
+                    "[api/chat] forcing suggest_attorneys after retry search",
                   );
                   return {
-                    activeTools: ["generate_incident_summary"],
-                    toolChoice: { type: "tool", toolName: "generate_incident_summary" },
+                    activeTools: ["suggest_attorneys"],
+                    toolChoice: { type: "tool", toolName: "suggest_attorneys" },
                   };
                 }
               }
@@ -1105,7 +1116,7 @@ export const Route = createFileRoute("/api/chat")({
                   toolResults: toolResults.map((result) => ({
                     toolName: result.toolName,
                     output:
-                      result.toolName === "generate_incident_summary"
+                      result.toolName !== "web_search_preview"
                         ? result.output
                         : "[web_search_preview output omitted]",
                   })),
