@@ -224,13 +224,11 @@ const pageMentionsAttorney = (body: string, attorney: SuggestedAttorney) => {
   const firstName = parts[0] ?? "";
   const lastName = parts.at(-1) ?? "";
 
-  if (!lastName || lastName.length <= 2 || !normalizedBody.includes(lastName)) return false;
+  if (!firstName || firstName.length <= 2 || !lastName || lastName.length <= 2) return false;
 
-  // When the first name is available, require it too. This prevents a page for a
-  // different attorney with a common surname from passing on the surname alone.
-  if (firstName.length > 2 && !normalizedBody.includes(firstName)) return false;
-
-  return true;
+  const compactBody = normalizedBody.replace(/[^a-z]+/g, " ").replace(/\s+/g, " ").trim();
+  const firstLastPattern = new RegExp(`\\b${firstName}\\b(?:\\s+[a-z]\\.?){0,3}\\s+\\b${lastName}\\b`);
+  return firstLastPattern.test(compactBody);
 };
 
 const DIRECTORY_HOSTS = [
