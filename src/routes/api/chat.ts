@@ -1191,6 +1191,20 @@ export const Route = createFileRoute("/api/chat")({
             },
             onStepEnd: ({ stepNumber, text, toolCalls, toolResults, finishReason }) => {
               toolResults.forEach((result) => {
+                if (
+                  result.toolName === "generate_incident_summary" &&
+                  isRecord(result.output) &&
+                  result.output.ok === true
+                ) {
+                  sawSummaryResult = true;
+                }
+                if (
+                  result.toolName === "suggest_attorneys" &&
+                  isRecord(result.output) &&
+                  result.output.ok === true
+                ) {
+                  sawAttorneyResult = true;
+                }
                 if (result.toolName !== "web_search_preview") return;
                 collectUrlsFromUnknown(result.output).forEach((url) => {
                   const normalized = normalizeObservedUrl(url);
@@ -1223,14 +1237,97 @@ export const Route = createFileRoute("/api/chat")({
             },
           });
 
-          return result.toUIMessageStreamResponse({
+          const stream = createUIMessageStream({
             originalMessages: messages as UIMessage[],
             onError: (error) => {
               console.error("[api/chat] stream response error:", error);
               const message = error instanceof Error ? error.message : String(error);
               return `Chat error: ${message}`;
             },
+            execute: async ({ writer }) => {
+              writer.merge(
+                result.toUIMessageStream({ sendStart: true, sendFinish: false }),
+              );
+
+              // Wait for the main run to finish so we can tell whether the model
+              // actually produced the attorney list + downloadable summary.
+              await result.text.catch(() => "");
+
+              const needsAttorneys = !sawAttorneyResult;
+              const needsSummary = !sawSummaryResult;
+
+              if (!needsAttorneys && !needsSummary) return;
+
+              console.warn(
+                "[api/chat] finalization pass required",
+                JSON.stringify({ needsAttorneys, needsSummary }),
+              );
+
+              let priorMessages: Awaited<typeof result.response>["messages"] = [];
+              try {
+                priorMessages = (await result.response).messages;
+              } catch (error) {
+                console.warn("[api/chat] could not read prior response messages", error);
+              }
+
+              const instructions = [
+                needsAttorneys
+                  ? "Call `suggest_attorneys` now using ONLY attorneys and URLs that already appeared in this conversation's web_search_preview results. If none qualify, call it with suggestedAttorneys: []."
+                  : null,
+                needsSummary
+                  ? "Then call `generate_incident_summary` with every field populated from the details the user actually gave you. Never include attorney names, firms or links in it."
+                  : null,
+                "Do not write any chat text in this turn other than at most one short closing sentence after the tool calls. Never list attorney names or URLs in text.",
+              ]
+                .filter(Boolean)
+                .join(" ");
+
+              const finalization = streamText({
+                model: openai.responses("gpt-4o"),
+                system: SYSTEM_PROMPT,
+                messages: [
+                  ...modelMessages,
+                  ...priorMessages,
+                  { role: "system" as const, content: `REQUIRED FINALIZATION STEP. ${instructions}` },
+                ],
+                tools: {
+                  suggest_attorneys: chatTools.suggest_attorneys,
+                  generate_incident_summary: chatTools.generate_incident_summary,
+                },
+                toolChoice: needsAttorneys
+                  ? { type: "tool", toolName: "suggest_attorneys" }
+                  : { type: "tool", toolName: "generate_incident_summary" },
+                stopWhen: stepCountIs(4),
+                prepareStep: ({ steps }) => {
+                  const calledSummary = steps.some((step) =>
+                    step.toolResults.some(
+                      (r) => r.toolName === "generate_incident_summary",
+                    ),
+                  );
+                  if (!calledSummary) {
+                    return {
+                      activeTools: ["generate_incident_summary"],
+                      toolChoice: {
+                        type: "tool",
+                        toolName: "generate_incident_summary",
+                      },
+                    };
+                  }
+                  return undefined;
+                },
+                onError: ({ error }) => {
+                  console.error("[api/chat] finalization error:", error);
+                },
+              });
+
+              writer.merge(
+                finalization.toUIMessageStream({ sendStart: false, sendFinish: true }),
+              );
+              await finalization.text.catch(() => "");
+            },
           });
+
+          return createUIMessageStreamResponse({ stream });
         } catch (error) {
           console.error("[api/chat] handler error:", error);
           const message = error instanceof Error ? error.message : String(error);
