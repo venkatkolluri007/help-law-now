@@ -270,7 +270,15 @@ export const Route = createFileRoute("/api/chat")({
                       ok: false,
                       error:
                         "Attorney links could not be verified. Run additional web_search_preview queries now, replace the flagged entries with real named attorneys whose links you actually observed in search results, and call generate_incident_summary again. Do not repeat rejected entries. If no verifiable attorneys can be found after retries, call generate_incident_summary with suggestedAttorneys: [] so the summary can still be downloaded without fabricated lawyer data.",
-                      attemptedSummary: { ...input, suggestedAttorneys: verified },
+                      attemptedSummary: {
+                        ...input,
+                        suggestedAttorneys: verified,
+                        verificationStatus: "verification_failed_retry_required",
+                        verificationWarnings: invalid.map(
+                          (c) =>
+                            `${c.attorney.name} — ${c.attorney.firm}: ${c.issues.join("; ")}`,
+                        ),
+                      },
                       verifiedAttorneys: verified,
                       invalid: invalid.map((c) => ({
                         name: c.attorney.name,
