@@ -765,6 +765,19 @@ async function verifyAttorneyLink(
       return { attorney, finalUrl, issues, warnings, status, bodySnippet: snippet };
     }
 
+    const pageTitle = extractTagText(body, "title")[0] ?? "";
+    const finalPath = new URL(finalUrl).pathname.replace(/\/+$/, "");
+    if (
+      (!finalPath || finalPath === "") &&
+      !pageMentionsAttorney(pageTitle, attorney) &&
+      !urlContainsLastName(finalUrl, getLastName(attorney.name))
+    ) {
+      issues.push(
+        `homepage URL ${finalUrl} does not name the attorney in the title or URL; rejecting generic firm homepage`,
+      );
+      return { attorney, finalUrl, issues, warnings, status, bodySnippet: snippet };
+    }
+
     if (attorney.location && !pageMentionsLocation(visiblePageText, attorney.location)) {
       issues.push(`page at final URL ${finalUrl} does not mention the requested location "${attorney.location}"`);
       return { attorney, finalUrl, issues, warnings, status, bodySnippet: snippet };
