@@ -1016,6 +1016,7 @@ function ChatSection({
 }
 
 type IncidentSummary = {
+  ok?: boolean;
   title?: string;
   situationSummary?: string;
   dateTimeframe?: string;
@@ -1034,7 +1035,50 @@ type IncidentSummary = {
     source?: string;
     link?: string;
   }>;
+  attemptedSummary?: IncidentSummary;
+  verificationStatus?: string;
+  verificationWarnings?: string[];
 };
+
+function isIncidentSummary(value: unknown): value is IncidentSummary {
+  return !!value && typeof value === "object" && "situationSummary" in value;
+}
+
+function extractIncidentSummaryOutput(output: unknown): IncidentSummary | null {
+  if (output && typeof output === "object" && "ok" in output && output.ok === false) {
+    if ("attemptedSummary" in output) {
+      const attempted = (output as { attemptedSummary?: unknown }).attemptedSummary;
+      if (isIncidentSummary(attempted)) return attempted;
+    }
+    return null;
+  }
+  if (isIncidentSummary(output)) return output;
+  if (output && typeof output === "object" && "attemptedSummary" in output) {
+    const attempted = (output as { attemptedSummary?: unknown }).attemptedSummary;
+    if (isIncidentSummary(attempted)) return attempted;
+  }
+  return null;
+}
+
+function dedupeRepeatedText(text: string) {
+  const paragraphs = text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const seen = new Set<string>();
+  const deduped = paragraphs.filter((paragraph) => {
+    const key = paragraph.replace(/\s+/g, " ").toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  if (deduped.length !== paragraphs.length) return deduped.join("\n\n");
+
+  const half = Math.floor(text.length / 2);
+  const left = text.slice(0, half).trim();
+  const right = text.slice(half).trim();
+  if (left && left === right) return left;
+
+  return text;
+}
 
 function summaryToMarkdown(s: IncidentSummary): string {
   const today = new Date().toLocaleDateString(undefined, {
@@ -1085,11 +1129,11 @@ ${attorneys || "—"}
 function ChatMessage({
   message, isStreaming,
 }: { message: UIMessage & { role: "assistant" | "user" }; isStreaming: boolean }) {
-  const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+  const text = dedupeRepeatedText(message.parts.map((p) => (p.type === "text" ? p.text : "")).join(""));
   const summaries = message.parts
-    .filter((p): p is typeof p & { output?: IncidentSummary } =>
+    .filter((p): p is typeof p & { output?: unknown } =>
       p.type === "tool-generate_incident_summary")
-    .map((p) => p.output)
+    .map((p) => extractIncidentSummaryOutput(p.output))
     .filter((o): o is IncidentSummary => !!o && !!o.situationSummary);
 
   return (
