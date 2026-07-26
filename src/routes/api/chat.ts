@@ -44,7 +44,11 @@ type AttorneyCheck = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object";
 
-const hasFailedSummaryResult = (steps: Array<{ toolResults: Array<{ toolName: string; output: unknown }> }>) =>
+const hasFailedSummaryResult = (
+  steps: ReadonlyArray<{
+    readonly toolResults: ReadonlyArray<{ readonly toolName: string; readonly output: unknown }>;
+  }>,
+) =>
   steps.some((step) =>
     step.toolResults.some(
       (result) =>
@@ -54,7 +58,11 @@ const hasFailedSummaryResult = (steps: Array<{ toolResults: Array<{ toolName: st
     ),
   );
 
-const hasSuccessfulSummaryResult = (steps: Array<{ toolResults: Array<{ toolName: string; output: unknown }> }>) =>
+const hasSuccessfulSummaryResult = (
+  steps: ReadonlyArray<{
+    readonly toolResults: ReadonlyArray<{ readonly toolName: string; readonly output: unknown }>;
+  }>,
+) =>
   steps.some((step) =>
     step.toolResults.some(
       (result) =>
