@@ -1140,7 +1140,13 @@ export const Route = createFileRoute("/api/chat")({
                 },
               }),
 
-            },
+          } as const;
+
+          const result = streamText({
+            model: openai.responses("gpt-4o"),
+            system: SYSTEM_PROMPT,
+            messages: modelMessages,
+            tools: chatTools,
             stopWhen: stepCountIs(16),
             prepareStep: ({ steps }) => {
               const lastStep = steps.at(-1);
