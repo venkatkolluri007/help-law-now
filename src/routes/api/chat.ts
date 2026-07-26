@@ -11,6 +11,105 @@ import { z } from "zod";
 
 type ChatRequestBody = { messages?: unknown };
 
+type SuggestedAttorney = {
+  name: string;
+  firm: string;
+  location: string;
+  source: string;
+  link: string;
+};
+
+type IncidentSummaryInput = {
+  title: string;
+  situationSummary: string;
+  dateTimeframe: string;
+  location: string;
+  partiesInvolved: string;
+  injuriesDamages: string;
+  evidenceAvailable: string;
+  desiredOutcome: string;
+  urgencyDeadline: string;
+  budget: string;
+  areaOfLaw: string;
+  suggestedAttorneys: SuggestedAttorney[];
+};
+
+type AttorneyCheck = {
+  attorney: SuggestedAttorney;
+  finalUrl: string;
+  issues: string[];
+  warnings: string[];
+};
+
+const getLastName = (name: string) => name.trim().split(/\s+/).pop()?.toLowerCase() ?? "";
+
+const suspiciousUrl = (url: string) =>
+  /\/(?:123456|654321|111111|000000)(?:\.|\/|$)/i.test(url) ||
+  /\/profile\/[A-Z][a-z]+-[A-Z][a-z]+\/?$/.test(url) ||
+  /\{[^}]+\}/.test(url);
+
+async function verifyAttorneyLink(attorney: SuggestedAttorney): Promise<AttorneyCheck> {
+  const issues: string[] = [];
+  const warnings: string[] = [];
+  let finalUrl = attorney.link;
+  const lastName = getLastName(attorney.name);
+
+  if (!/^https?:\/\//i.test(attorney.link)) {
+    issues.push("link is not a valid http(s) URL");
+    return { attorney, finalUrl, issues, warnings };
+  }
+
+  if (suspiciousUrl(attorney.link)) {
+    issues.push("link looks fabricated (placeholder ID or pattern-based path)");
+    return { attorney, finalUrl, issues, warnings };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const res = await fetch(attorney.link, {
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; AllyAI-LinkCheck/1.0)",
+      },
+    });
+    finalUrl = res.url;
+
+    if (!res.ok) {
+      if ([401, 403, 429].includes(res.status) && lastName && finalUrl.toLowerCase().includes(lastName)) {
+        warnings.push(`link returned HTTP ${res.status}, but final URL includes attorney last name`);
+        return { attorney: { ...attorney, link: finalUrl }, finalUrl, issues, warnings };
+      }
+      issues.push(`link returned HTTP ${res.status}`);
+      return { attorney, finalUrl, issues, warnings };
+    }
+
+    const body = (await res.text()).slice(0, 250_000).toLowerCase();
+    const finalUrlLower = finalUrl.toLowerCase();
+    if (lastName && lastName.length > 2 && !body.includes(lastName)) {
+      if (finalUrlLower.includes(lastName)) {
+        warnings.push("page text did not expose the attorney name, but final URL includes the last name");
+      } else {
+        issues.push(`page at final URL ${finalUrl} does not mention "${attorney.name}"`);
+      }
+    }
+
+    return { attorney: { ...attorney, link: finalUrl }, finalUrl, issues, warnings };
+  } catch (err) {
+    if (lastName && finalUrl.toLowerCase().includes(lastName)) {
+      warnings.push(
+        `link check was inconclusive (${err instanceof Error ? err.message : String(err)}), but URL includes attorney last name`,
+      );
+      return { attorney, finalUrl, issues, warnings };
+    }
+    issues.push(`link failed to load: ${err instanceof Error ? err.message : String(err)}`);
+    return { attorney, finalUrl, issues, warnings };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 const SYSTEM_PROMPT = `You are a warm, empathetic legal intake assistant for Ally AI.
 
 Your job has two goals:
@@ -44,9 +143,9 @@ WHEN YOU HAVE ENOUGH DETAIL — follow these steps in this exact order. Do NOT s
    - Common Western given+surname combinations (John Smith, Emily Johnson, Michael Brown, etc.) paired with generic firm names (Smith & Associates, Johnson Law Firm, Brown & Partners) are a strong signal you are hallucinating. Discard and re-search.
    - If after multiple searches you cannot find 2 real named attorneys with verifiable URLs, call generate_incident_summary with an empty suggestedAttorneys array rather than fabricating entries.
 
-2. THEN you MUST call the \`generate_incident_summary\` tool EXACTLY ONCE with a fully-populated structured object using the fields defined by the tool schema, including the 2–4 suggested attorneys pulled from your live search results (each with a real link you observed). This step is mandatory — do NOT recommend attorneys in chat text without first calling this tool. Use only facts the user gave you. Neutral, factual tone. No legal conclusions.
+2. THEN you MUST call the \`generate_incident_summary\` tool with a fully-populated structured object using the fields defined by the tool schema, including the 2–4 suggested attorneys pulled from your live search results (each with a real link you observed). This step is mandatory — do NOT recommend attorneys in chat text without first calling this tool. Use only facts the user gave you. Neutral, factual tone. No legal conclusions.
 
-   If the tool returns an error listing invalid attorney links, you MUST run additional web_search_preview queries to find replacements and call generate_incident_summary again. Do not repeat rejected entries.
+   If the tool returns ok:false or an error listing invalid attorney links, you MUST run additional web_search_preview queries to find replacement named attorneys and call generate_incident_summary again. Do not repeat rejected entries. Retry with new live search results up to 3 times. If you still cannot find verifiable named attorneys after retries, call generate_incident_summary with suggestedAttorneys: [] so the downloadable incident summary still renders without fabricated lawyer data.
 
 3. THEN, and ONLY after that tool call succeeds, reply in chat with ONE short paragraph (2–4 sentences max) that:
    - Confirms the downloadable incident summary is ready above.
@@ -137,88 +236,102 @@ export const Route = createFileRoute("/api/chat")({
                     )
                     .describe("2–4 real attorneys pulled from the live web search."),
                 }),
-                execute: async (input) => {
+                execute: async (input: IncidentSummaryInput) => {
                   const attorneys = input.suggestedAttorneys ?? [];
-                  const suspiciousUrl = (url: string) =>
-                    /\/(?:123456|654321|111111|000000)(?:\.|\/|$)/i.test(url) ||
-                    /\/profile\/[A-Z][a-z]+-[A-Z][a-z]+\/?$/.test(url) ||
-                    /\{[^}]+\}/.test(url);
-
-                  const checks = await Promise.all(
-                    attorneys.map(async (a) => {
-                      const issues: string[] = [];
-                      let finalUrl = a.link;
-                      try {
-                        if (!/^https?:\/\//i.test(a.link)) {
-                          issues.push("link is not a valid http(s) URL");
-                        } else if (suspiciousUrl(a.link)) {
-                          issues.push(
-                            "link looks fabricated (placeholder ID or pattern-based path)",
-                          );
-                        } else {
-                          const controller = new AbortController();
-                          const timer = setTimeout(() => controller.abort(), 8000);
-                          try {
-                            const res = await fetch(a.link, {
-                              redirect: "follow",
-                              signal: controller.signal,
-                              headers: {
-                                "User-Agent":
-                                  "Mozilla/5.0 (compatible; AllyAI-LinkCheck/1.0)",
-                              },
-                            });
-                            finalUrl = res.url;
-                            if (!res.ok) {
-                              issues.push(`link returned HTTP ${res.status}`);
-                            } else {
-                              const body = (await res.text()).toLowerCase();
-                              const lastName = a.name
-                                .trim()
-                                .split(/\s+/)
-                                .pop()
-                                ?.toLowerCase();
-                              if (
-                                lastName &&
-                                lastName.length > 2 &&
-                                !body.includes(lastName)
-                              ) {
-                                issues.push(
-                                  `page at final URL ${finalUrl} does not mention "${a.name}"`,
-                                );
-                              }
-                            }
-                          } finally {
-                            clearTimeout(timer);
-                          }
-                        }
-                      } catch (err) {
-                        issues.push(
-                          `link failed to load: ${err instanceof Error ? err.message : String(err)}`,
-                        );
-                      }
-                      return { attorney: a, finalUrl, issues };
-                    }),
+                  console.info(
+                    `[api/chat] incident summary verification started: ${input.areaOfLaw} / ${input.location}; attorneys=${attorneys.length}`,
                   );
 
+                  const checks = await Promise.all(attorneys.map(verifyAttorneyLink));
+
                   const invalid = checks.filter((c) => c.issues.length > 0);
-                  if (invalid.length > 0) {
+                  const verified = checks.filter((c) => c.issues.length === 0).map((c) => c.attorney);
+                  const warnings = checks.flatMap((c) =>
+                    c.warnings.map((warning) => `${c.attorney.name}: ${warning}`),
+                  );
+
+                  if (invalid.length > 0 && verified.length < 2) {
+                    console.warn(
+                      "[api/chat] incident summary verification rejected; model must re-search",
+                      JSON.stringify({
+                        location: input.location,
+                        areaOfLaw: input.areaOfLaw,
+                        verifiedCount: verified.length,
+                        invalid: invalid.map((c) => ({
+                          name: c.attorney.name,
+                          firm: c.attorney.firm,
+                          link: c.attorney.link,
+                          finalUrl: c.finalUrl,
+                          reasons: c.issues,
+                        })),
+                      }),
+                    );
                     return {
                       ok: false,
                       error:
-                        "One or more attorney links could not be verified. Run additional web_search_preview queries, replace the flagged entries with real attorneys whose links you actually observed in search results, and call generate_incident_summary again. Do not resubmit the flagged entries.",
+                        "Attorney links could not be verified. Run additional web_search_preview queries now, replace the flagged entries with real named attorneys whose links you actually observed in search results, and call generate_incident_summary again. Do not repeat rejected entries. If no verifiable attorneys can be found after retries, call generate_incident_summary with suggestedAttorneys: [] so the summary can still be downloaded without fabricated lawyer data.",
+                      attemptedSummary: { ...input, suggestedAttorneys: verified },
+                      verifiedAttorneys: verified,
                       invalid: invalid.map((c) => ({
                         name: c.attorney.name,
                         firm: c.attorney.firm,
                         link: c.attorney.link,
+                        finalUrl: c.finalUrl,
                         reasons: c.issues,
                       })),
                     };
                   }
-                  return { ok: true, ...input };
+
+                  if (invalid.length > 0) {
+                    console.warn(
+                      "[api/chat] incident summary accepted after filtering invalid attorney links",
+                      JSON.stringify({
+                        location: input.location,
+                        areaOfLaw: input.areaOfLaw,
+                        verifiedCount: verified.length,
+                        filteredCount: invalid.length,
+                      }),
+                    );
+                  } else {
+                    console.info(
+                      `[api/chat] incident summary verification passed: verified=${verified.length}`,
+                    );
+                  }
+
+                  return {
+                    ok: true,
+                    ...input,
+                    suggestedAttorneys: verified,
+                    verificationStatus:
+                      attorneys.length === 0
+                        ? "no_attorneys_found"
+                        : invalid.length > 0
+                          ? "filtered_invalid_attorneys"
+                          : "verified",
+                    verificationWarnings: warnings,
+                  };
                 },
               }),
             },
             stopWhen: stepCountIs(50),
+            onStepEnd: ({ stepNumber, text, toolCalls, toolResults, finishReason }) => {
+              console.info(
+                "[api/chat] step complete",
+                JSON.stringify({
+                  stepNumber,
+                  finishReason,
+                  textLength: text.length,
+                  toolCalls: toolCalls.map((call) => call.toolName),
+                  toolResults: toolResults.map((result) => ({
+                    toolName: result.toolName,
+                    output:
+                      result.toolName === "generate_incident_summary"
+                        ? result.output
+                        : "[web_search_preview output omitted]",
+                  })),
+                }),
+              );
+            },
             onError: ({ error }) => {
               console.error("[api/chat] streamText error:", error);
             },
