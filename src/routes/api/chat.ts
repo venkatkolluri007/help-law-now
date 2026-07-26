@@ -108,10 +108,6 @@ async function verifyAttorneyLink(attorney: SuggestedAttorney): Promise<Attorney
     finalUrl = res.url;
 
     if (!res.ok) {
-      if ([401, 403, 429].includes(res.status) && lastName && finalUrl.toLowerCase().includes(lastName)) {
-        warnings.push(`link returned HTTP ${res.status}, but final URL includes attorney last name`);
-        return { attorney: { ...attorney, link: finalUrl }, finalUrl, issues, warnings };
-      }
       issues.push(`link returned HTTP ${res.status}`);
       return { attorney, finalUrl, issues, warnings };
     }
@@ -128,12 +124,6 @@ async function verifyAttorneyLink(attorney: SuggestedAttorney): Promise<Attorney
 
     return { attorney: { ...attorney, link: finalUrl }, finalUrl, issues, warnings };
   } catch (err) {
-    if (lastName && finalUrl.toLowerCase().includes(lastName)) {
-      warnings.push(
-        `link check was inconclusive (${err instanceof Error ? err.message : String(err)}), but URL includes attorney last name`,
-      );
-      return { attorney, finalUrl, issues, warnings };
-    }
     issues.push(`link failed to load: ${err instanceof Error ? err.message : String(err)}`);
     return { attorney, finalUrl, issues, warnings };
   } finally {
@@ -165,11 +155,12 @@ Ask ONE question at a time. Skip any item the user has already told you unprompt
 Keep going until you have enough substance for a useful summary. Don't rush and don't ask more than one thing at a time.
 
 WHEN YOU HAVE ENOUGH DETAIL — follow these steps in this exact order. Do NOT skip step 2.
-1. FIRST use the web_search_preview tool to find real attorneys matching location + specialty + budget. Prefer Avvo, Martindale-Hubbell, FindLaw, Justia, Super Lawyers, state bar directories, and the firms' own websites. You MUST name specific individual attorneys — if a search returns only a firm, run a follow-up search on that firm's team page to name a real lawyer; otherwise drop that firm. Run multiple searches if needed until you have 2–4 real named attorneys with URLs you actually observed in tool output.
+1. FIRST use the web_search_preview tool to find real attorneys matching location + specialty + budget. Prefer firm websites, official attorney bio/team pages, Justia, Super Lawyers, state bar directories, FindLaw, Avvo, and Martindale-Hubbell, in that order. You MUST name specific individual attorneys — if a search returns only a firm, run a follow-up search on that firm's team page to name a real lawyer; otherwise drop that firm. Run multiple searches if needed until you have 2–4 real named attorneys with URLs you actually observed in tool output.
 
    ABSOLUTE ANTI-FABRICATION RULES — non-negotiable:
    - Every attorney name, firm name, and URL you emit MUST come verbatim from a web_search_preview result you actually received in this conversation. If you did not see it in a tool result, you do not have it.
    - NEVER invent, guess, extrapolate, or "construct" a URL. No placeholder or pattern-based IDs (e.g. /123456, /654321, /profile/First-Last, /attorneys/{zip}-{state}-{name}-{id}.html). If you find yourself typing a URL you didn't literally copy from a search result, stop.
+   - Directory pages that return 401, 403, 404, 429, bot-check pages, or unrelated redirects are NOT working links. Replace them with accessible firm bio pages or call generate_incident_summary with an empty suggestedAttorneys array.
    - NEVER pair a real firm with a made-up attorney name, or a real attorney with a guessed profile URL. Only emit an attorney if BOTH the name and a link to that specific attorney (or their firm's team/bio page naming them) appeared in your search results.
    - Common Western given+surname combinations (John Smith, Emily Johnson, Michael Brown, etc.) paired with generic firm names (Smith & Associates, Johnson Law Firm, Brown & Partners) are a strong signal you are hallucinating. Discard and re-search.
    - If after multiple searches you cannot find 2 real named attorneys with verifiable URLs, call generate_incident_summary with an empty suggestedAttorneys array rather than fabricating entries.
