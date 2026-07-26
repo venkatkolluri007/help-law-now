@@ -1028,17 +1028,29 @@ type IncidentSummary = {
   desiredOutcome?: string;
   urgencyDeadline?: string;
   budget?: string;
-  suggestedAttorneys?: Array<{
-    name?: string;
-    firm?: string;
-    location?: string;
-    source?: string;
-    link?: string;
-  }>;
   attemptedSummary?: IncidentSummary;
   verificationStatus?: string;
   verificationWarnings?: string[];
 };
+
+type VerifiedAttorney = {
+  name?: string;
+  firm?: string;
+  location?: string;
+  source?: string;
+  link?: string;
+};
+
+function extractVerifiedAttorneys(output: unknown): VerifiedAttorney[] | null {
+  if (!output || typeof output !== "object") return null;
+  const record = output as { ok?: unknown; verifiedAttorneys?: unknown };
+  if (record.ok !== true || !Array.isArray(record.verifiedAttorneys)) return null;
+  return record.verifiedAttorneys.filter(
+    (a): a is VerifiedAttorney =>
+      !!a && typeof a === "object" && typeof (a as VerifiedAttorney).link === "string",
+  );
+}
+
 
 function isIncidentSummary(value: unknown): value is IncidentSummary {
   return !!value && typeof value === "object" && "situationSummary" in value;
