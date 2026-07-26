@@ -75,7 +75,7 @@ const hasSuccessfulSummaryResult = (
 const getLastName = (name: string) => name.trim().split(/\s+/).pop()?.toLowerCase() ?? "";
 
 const suspiciousUrl = (url: string) =>
-  /\/(?:123456|654321|111111|000000)(?:\.|\/|$)/i.test(url) ||
+  /(?:123456|654321|111111|000000)(?:\.|\/|$)/i.test(url) ||
   /\/profile\/[A-Z][a-z]+-[A-Z][a-z]+\/?$/.test(url) ||
   /\{[^}]+\}/.test(url);
 
