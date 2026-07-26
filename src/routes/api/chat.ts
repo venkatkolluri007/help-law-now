@@ -1195,6 +1195,13 @@ export const Route = createFileRoute("/api/chat")({
             onStepEnd: ({ stepNumber, text, toolCalls, toolResults, finishReason }) => {
               toolResults.forEach((result) => {
                 if (
+                  result.toolName === "web_search_preview" ||
+                  result.toolName === "suggest_attorneys" ||
+                  result.toolName === "generate_incident_summary"
+                ) {
+                  reachedFinalStage = true;
+                }
+                if (
                   result.toolName === "generate_incident_summary" &&
                   isRecord(result.output) &&
                   result.output.ok === true
