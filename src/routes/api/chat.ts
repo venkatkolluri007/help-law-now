@@ -41,6 +41,29 @@ type AttorneyCheck = {
   warnings: string[];
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  !!value && typeof value === "object";
+
+const hasFailedSummaryResult = (steps: Array<{ toolResults: Array<{ toolName: string; output: unknown }> }>) =>
+  steps.some((step) =>
+    step.toolResults.some(
+      (result) =>
+        result.toolName === "generate_incident_summary" &&
+        isRecord(result.output) &&
+        result.output.ok === false,
+    ),
+  );
+
+const hasSuccessfulSummaryResult = (steps: Array<{ toolResults: Array<{ toolName: string; output: unknown }> }>) =>
+  steps.some((step) =>
+    step.toolResults.some(
+      (result) =>
+        result.toolName === "generate_incident_summary" &&
+        isRecord(result.output) &&
+        result.output.ok === true,
+    ),
+  );
+
 const getLastName = (name: string) => name.trim().split(/\s+/).pop()?.toLowerCase() ?? "";
 
 const suspiciousUrl = (url: string) =>
@@ -322,6 +345,46 @@ export const Route = createFileRoute("/api/chat")({
               }),
             },
             stopWhen: stepCountIs(50),
+            prepareStep: ({ steps }) => {
+              const lastStep = steps.at(-1);
+              const previousFailedSummary = hasFailedSummaryResult(steps);
+              const previousSuccessfulSummary = hasSuccessfulSummaryResult(steps);
+
+              if (previousFailedSummary && !previousSuccessfulSummary) {
+                const lastHadRejectedSummary = lastStep?.toolResults.some(
+                  (result) =>
+                    result.toolName === "generate_incident_summary" &&
+                    isRecord(result.output) &&
+                    result.output.ok === false,
+                );
+
+                if (lastHadRejectedSummary) {
+                  console.info(
+                    "[api/chat] forcing web_search_preview after rejected summary verification",
+                  );
+                  return {
+                    activeTools: ["web_search_preview"],
+                    toolChoice: { type: "tool", toolName: "web_search_preview" },
+                  };
+                }
+
+                const lastHadRetrySearch = lastStep?.toolResults.some(
+                  (result) => result.toolName === "web_search_preview",
+                );
+
+                if (lastHadRetrySearch) {
+                  console.info(
+                    "[api/chat] forcing generate_incident_summary after retry search",
+                  );
+                  return {
+                    activeTools: ["generate_incident_summary"],
+                    toolChoice: { type: "tool", toolName: "generate_incident_summary" },
+                  };
+                }
+              }
+
+              return undefined;
+            },
             onStepEnd: ({ stepNumber, text, toolCalls, toolResults, finishReason }) => {
               console.info(
                 "[api/chat] step complete",
