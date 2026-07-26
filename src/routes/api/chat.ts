@@ -935,11 +935,10 @@ export const Route = createFileRoute("/api/chat")({
           let attorneyAttempts = 0;
           const observedSearchUrls = new Set<string>();
           const observedSearchUrlMap = new Map<string, string>();
-          const result = streamText({
-            model: openai.responses("gpt-4o"),
-            system: SYSTEM_PROMPT,
-            messages: await convertToModelMessages(messages as UIMessage[]),
-            tools: {
+          const modelMessages = await convertToModelMessages(messages as UIMessage[]);
+          let sawSummaryResult = false;
+          let sawAttorneyResult = false;
+          const chatTools = {
               web_search_preview: openai.tools.webSearchPreview({}),
               suggest_attorneys: tool({
                 description:
