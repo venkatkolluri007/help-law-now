@@ -1,3 +1,4 @@
+import { submitPractice } from "@/lib/submit-practice.functions";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -64,30 +64,14 @@ export function ListPracticeDialog({ specialties, trigger, onSubmitted }: Props)
     }
     setSubmitting(true);
     try {
-      const ext = photo!.name.split(".").pop() || "jpg";
-      const path = `${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("attorney-photos")
-        .upload(path, photo!, { contentType: photo!.type, upsert: false });
-      if (upErr) throw upErr;
-
-      const { data: signed, error: signErr } = await supabase.storage
-        .from("attorney-photos")
-        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (signErr || !signed) throw signErr ?? new Error("Failed to sign URL");
-
-      const { error: insErr } = await supabase
-        .from("attorney_submissions")
-        .insert({
-          full_name: form.full_name.trim(),
-          title: form.title.trim(),
-          specialty: form.specialty,
-          location: form.location.trim(),
-          description: form.description.trim(),
-          photo_url: signed.signedUrl,
-          status: "pending",
-        });
-      if (insErr) throw insErr;
+      const fd = new FormData();
+      fd.append("full_name", form.full_name.trim());
+      fd.append("title", form.title.trim());
+      fd.append("specialty", form.specialty);
+      fd.append("location", form.location.trim());
+      fd.append("description", form.description.trim());
+      fd.append("photo", photo!);
+      await submitPractice({ data: fd });
 
       toast.success("Submitted! Your listing will show as Pending review.");
       reset();
