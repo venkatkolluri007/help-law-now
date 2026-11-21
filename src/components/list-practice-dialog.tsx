@@ -1,4 +1,4 @@
-import { submitPractice } from "@/lib/submit-practice.functions";
+import { submitPracticeRequest } from "@/lib/api";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export function ListPracticeDialog({ specialties, trigger, onSubmitted }: Props)
     description: "",
   });
   const [photo, setPhoto] = useState<File | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const reset = () => {
@@ -63,15 +64,17 @@ export function ListPracticeDialog({ specialties, trigger, onSubmitted }: Props)
       return;
     }
     setSubmitting(true);
+    setRequestError(null);
     try {
+      if (!photo) return;
       const fd = new FormData();
       fd.append("full_name", form.full_name.trim());
       fd.append("title", form.title.trim());
       fd.append("specialty", form.specialty);
       fd.append("location", form.location.trim());
       fd.append("description", form.description.trim());
-      fd.append("photo", photo!);
-      await submitPractice({ data: fd });
+      fd.append("photo", photo);
+      await submitPracticeRequest(fd);
 
       toast.success("Submitted! Your listing will show as Pending review.");
       reset();
@@ -79,6 +82,7 @@ export function ListPracticeDialog({ specialties, trigger, onSubmitted }: Props)
       onSubmitted?.();
     } catch (err) {
       console.error(err);
+      setRequestError(err instanceof Error ? err.message : "Submission failed. Please try again.");
       toast.error(err instanceof Error ? err.message : "Submission failed");
     } finally {
       setSubmitting(false);
@@ -103,6 +107,7 @@ export function ListPracticeDialog({ specialties, trigger, onSubmitted }: Props)
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          {requestError && <p role="alert" className="text-sm text-destructive">{requestError}</p>}
           <div className="space-y-2">
             <Label htmlFor="full_name">Full name <span className="text-destructive">*</span></Label>
             <Input

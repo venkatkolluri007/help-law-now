@@ -35,7 +35,8 @@ import {
   UserPlus,
   ClipboardList,
 } from "lucide-react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { apiUrl, apiFetch } from "@/lib/api";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { motion, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -85,7 +86,8 @@ type Submission = {
 
 function HomePage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const chatTransport = useMemo(() => new DefaultChatTransport({ api: "/api/chat" }), []);
+  const chatTransport = useMemo(() => new DefaultChatTransport({ api: apiUrl("/api/chat"), fetch: apiFetch }), []);
+  const [offline, setOffline] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const { messages, sendMessage, status, stop } = useChat({
     id: "ally-ai-chat", transport: chatTransport, messages: [WELCOME_MESSAGE],
@@ -100,6 +102,13 @@ function HomePage() {
   const composerRef = useRef<HTMLDivElement>(null);
   const previousStatusRef = useRef(status);
 
+  useEffect(() => {
+    const update = () => setOffline(!navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => { window.removeEventListener("online", update); window.removeEventListener("offline", update); };
+  }, []);
   useEffect(() => {
     composerRef.current?.querySelector("textarea")?.focus({ preventScroll: true });
   }, []);
@@ -126,7 +135,8 @@ function HomePage() {
   const handlePromptSubmit = async ({ text }: { text: string; files: unknown[] }) => {
     if (!text.trim() || isLoading) return;
     setChatError(null);
-    await sendMessage({ text: text.trim() });
+    try { await sendMessage({ text: text.trim() }); }
+    catch (error) { setChatError(error instanceof Error ? error.message : "Please check your connection and try again."); }
   };
 
   return (
@@ -149,6 +159,7 @@ function HomePage() {
           <div className="ambient-glow" />
           <div className="ambient-frame">
             <Header />
+            {offline && <div role="status" className="border-y border-border bg-muted px-4 py-3 text-center text-sm text-foreground">You’re offline. Your current chat stays here while the app is open. Reconnect to send messages or submit a listing.</div>}
             <Hero onQuickStart={() => scrollToId("chat")} />
             <RunwayStrip />
             <WhyAllySection />
@@ -175,7 +186,7 @@ function Header() {
   return (
     <motion.header
       initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}
-      className="sticky top-3 z-50 px-3 pt-3 sm:px-5"
+      className="mobile-header sticky top-3 z-50 px-3 pt-3 sm:px-5"
     >
       <div className="pill-nav mx-auto flex max-w-6xl items-center justify-between gap-4 px-3 py-2 sm:px-4">
         <a href="/" className="group flex items-center gap-2.5 pl-2">
@@ -980,7 +991,7 @@ function ChatSection({
                     </div>
                   )}
                   {chatError && !isLoading && (
-                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                       The assistant couldn't finish that request. {chatError} Please send your message again.
                     </div>
                   )}
@@ -988,7 +999,8 @@ function ChatSection({
                 <ConversationScrollButton className="absolute bottom-4 right-4" />
               </Conversation>
 
-              <div className="border-t border-black/10 p-4">
+              <div className="chat-composer border-t border-black/10 p-4">
+                <p className="mb-3 text-xs text-muted-foreground">Not legal advice. Consult a qualified attorney about your situation.</p>
                 {messages.length === 1 && (
                   <div className="mb-3 flex flex-wrap gap-2">
                     {QUICK_PROMPTS.map((prompt, i) => (
@@ -1460,6 +1472,7 @@ function Footer() {
           <p className="text-center text-xs text-muted-foreground max-w-md">
             Ally AI is not a law firm and does not provide legal advice. We help you find independent attorneys — please verify credentials before hiring.
           </p>
+          <nav aria-label="Legal" className="flex shrink-0 gap-4 text-sm text-muted-foreground"><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link></nav>
         </div>
       </div>
     </footer>

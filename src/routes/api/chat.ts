@@ -10,6 +10,7 @@ import {
   type UIMessage,
 } from "ai";
 import { z } from "zod";
+import { corsHeaders, withCors } from "@/lib/cors";
 
 type ChatRequestBody = { messages?: unknown };
 
@@ -915,19 +916,20 @@ GUARDRAILS
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
+      OPTIONS: ({ request }) => new Response(null, { status: 204, headers: corsHeaders(request) }),
       POST: async ({ request }) => {
         try {
           const { messages } = (await request.json()) as ChatRequestBody;
           if (!Array.isArray(messages)) {
-            return new Response("Messages are required", { status: 400 });
+            return withCors(request, new Response("Messages are required", { status: 400 }));
           }
 
           const key = process.env.OPENAI_API_KEY;
           if (!key) {
-            return new Response(
+            return withCors(request, new Response(
               "Missing OPENAI_API_KEY. Add it in Project Settings → Secrets.",
               { status: 500 },
-            );
+            ));
           }
 
           const openai = createOpenAI({ apiKey: key });
@@ -1342,11 +1344,11 @@ export const Route = createFileRoute("/api/chat")({
             },
           });
 
-          return createUIMessageStreamResponse({ stream });
+          return withCors(request, createUIMessageStreamResponse({ stream }));
         } catch (error) {
           console.error("[api/chat] handler error:", error);
           const message = error instanceof Error ? error.message : String(error);
-          return new Response(`Chat error: ${message}`, { status: 500 });
+          return withCors(request, new Response(`Chat error: ${message}`, { status: 500 }));
         }
       },
     },
